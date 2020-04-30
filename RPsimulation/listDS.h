@@ -1,39 +1,47 @@
-#include "STDLibraries.h"
+#include "coreDataType.h"
 
 #ifndef listDS_h
 #define listDS_h
 
 namespace core {
 
+
 template <class data_type>
 class list
 {
 private: //------------------------------------------------------------
     struct node
-    {
+{
         data_type data;
-        node* next;
-        node* previous;
+        node* right;
+        node* left;
     };
-    node* head;
-    node* tail;
-    int count;
+    node* first;
+    node* last;
+    long size_;
     node* current;
-    unsigned current_i;
+    long current_i;
     node* savedA;
-    unsigned savedA_index;
+    long savedA_i;
     node* savedB;
-    unsigned savedB_index;
-    bool save_mode;
+    long savedB_i;
     bool save_turn;
-    int save_factor;
+    int objectID;
+    static int currentObject;
 public: //------------------------------------------------------------
-    list (int save_factor_input=6)
+    list ()
     {
         set();
-        if (save_factor_input < 6)
-            save_factor_input = 6;
-        save_factor = save_factor_input;
+        currentObject++;
+        objectID = currentObject;
+    }
+    list (unsigned size__)
+    {
+        set();
+        for (auto i=0; i<size__; i++)
+        {
+            add_node_back();
+        }
     }
     ~list ()
     {
@@ -41,619 +49,582 @@ public: //------------------------------------------------------------
     }
     list (const list & source)
     {
-        if (source.count==0)
-            return;
-        count = 0;
-        node* temp = source.head;
-        push_back (temp->data);
-        while (temp->next != NULL)
+        set();
+        node* temp = source.first;
+        for (auto i=0; i<source.size_; i++)
         {
-            temp = temp->next;
-            push_back (temp->data);
+            push_back(temp->data);
+            temp = temp->right;
         }
-    }
-    void operator = (const list & source)
-    {
-        if (source.count==0)
-            return;
-        clear();
-        node* temp = source.head;
-        push_back (temp->data);
-        while (temp->next != NULL)
-        {
-            temp = temp->next;
-            push_back (temp->data);
-        }
-    }
-    data_type& operator [] (unsigned index)
-    {
-        if (index>=count)
-            index = count - 1;
-        find_node (index);
-        save_current_node ();
-        return current->data;
-    }
-    void push_front (data_type new_data)
-    {
-        node* new_node = make_node (new_data);
-        if (count==0)
-            initialize (new_node);
-        else
-        {
-            head->previous = new_node;
-            new_node->next = head;
-            head = head->previous;
-            head->previous = NULL;
-        }
-        count++;
-        switch_save_mode();
-        update_saved_nodes_push (0);
-    }
-    void push_back (data_type new_data)
-    {
-        node* new_node = make_node (new_data);
-        if (count==0)
-            initialize (new_node);
-        else
-        {
-            tail->next = new_node;
-            new_node->previous = tail;
-            tail = tail->next;
-            tail->next = NULL;
-        }
-        count++;
-        switch_save_mode ();
-    }
-    void push (data_type new_data, unsigned index)
-    {
-        if (index>count)
-            return;
-        if (count==0)
-        {
-            push_back (new_data);
-            return;
-        }
-        if (index==0)
-        {
-            push_front (new_data);
-            return;
-        }
-        if (index==count)
-        {
-            push_back (new_data);
-            return;
-        }
-        find_node (index);
-        node* new_node = make_node (new_data);
-        new_node->next = current;
-        new_node->previous = current->previous;
-        current->previous = new_node;
-        new_node->previous->next = new_node;
-        count++;
-        switch_save_mode ();
-        update_saved_nodes_push (index);
-    }
-    data_type pop_front ()
-    {
-        if (count==0)
-            return NULL;
-        data_type data = head->data;
-        if (count==1)
-        {
-            delete head;
-            head = NULL;
-            tail = NULL;
-        }
-        else
-        {
-            data = head->data;
-            node* new_node = head;
-            head = head->next;
-            head->previous = NULL;
-            delete new_node;
-            new_node = NULL;
-        }
-        count--;
-        switch_save_mode();
-        update_save_nodes_pop (0);
-        return data;
-    }
-    data_type pop_back ()
-    {
-        if (count == 0)
-            return NULL;
-        node* temp;
-        data_type data;
-        if (count == 1)
-        {
-            data = tail->data;
-            delete tail;
-            head = NULL;
-            tail = NULL;
-        }
-        else
-        {
-            data = tail->data;
-            temp = tail;
-            tail = tail->previous;
-            tail->next = NULL;
-            delete temp;
-        }
-        count--;
-        switch_save_mode();
-        update_save_nodes_pop (count-2);
-        return data;
-    }
-    data_type pop (unsigned index)
-    {
-        if (index >= count)
-            return NULL;
-        data_type data;
-        if (index==0)
-        {
-            data = pop_front();
-            return data;
-        }
-        if (index==count-1)
-        {
-            data = pop_back();
-            return data;
-        }
-        find_node (index);
-        save_current_node();
-        update_save_nodes_pop (index);
-        current->previous->next = current->next;
-        current->next->previous = current->previous;
-        data = current->data;
-        count--;
-        switch_save_mode();
-        delete current;
-        return data;
-    }
-    void move_front (unsigned start_index, unsigned end_index)
-    {
-        if (start_index >= count || start_index == 0 || end_index >= count || end_index < start_index)
-            return;
-        node* start;
-        node* end;
-        bypass_range (start, end, start_index, end_index);
-        connect_range_front (start, end);
-        save_mode = 0;
-        switch_save_mode();
-    }
-    void move_back (unsigned start_index, unsigned end_index)
-    {
-        if (start_index >= count || end_index >= count-1 || end_index < start_index)
-            return;
-        node* start;
-        node* end;
-        bypass_range (start, end, start_index, end_index);
-        connect_range_back (start, end);
-        save_mode = 0;
-        switch_save_mode();
-    }
-    void move (unsigned start_index, unsigned end_index, unsigned target_index)
-    {
-        if (start_index >= count || end_index >= count || target_index >= count || end_index < start_index || (target_index >= start_index && target_index <= end_index))
-            return;
-        if (target_index == 0)
-        {
-            move_front (start_index, end_index);
-            return;
-        }
-        if (target_index == count-1)
-        {
-            move_back (start_index, end_index);
-            return;
-        }
-        find_node (target_index);
-        node* target = current;
-        node* start;
-        node* end;
-        bypass_range (start, end, start_index, end_index);
-        connect_range_middle (start, end, target);
-        save_mode = 0;
-        switch_save_mode();
-    }
-    void extract (unsigned start_index, unsigned end_index, list & target_list, char mode='b')
-    {
-        if (count == 0 || start_index >= count || end_index >= count || end_index < start_index)
-            return;
-        if (start_index == 0 && end_index == count-1)
-        {
-            target_list.head = head;
-            target_list.tail = tail;
-            set();
-            target_list.count = target_list.count + end_index - start_index + 1;
-            target_list.switch_save_mode();
-            return;
-        }
-        node* start;
-        node* end;
-        bypass_range (start, end, start_index, end_index);
-        count = count - (end_index - start_index + 1);
-        if (target_list.empty())
-            mode = 'o';
-        if (mode == 'o')
-        {
-            target_list.clear();
-            target_list.head = start;
-            target_list.tail = end;
-        }
-        else if (mode == 'b')
-        {
-            target_list.tail->next = start;
-            start->previous = target_list.tail;
-            target_list.tail = end;
-        }
-        else if (mode == 'f')
-        {
-            target_list.head->previous = end;
-            end->next = target_list.head;
-            target_list.head = start;
-        }
-        target_list.count = target_list.count + end_index - start_index + 1;
-        target_list.switch_save_mode();
-        switch_save_mode();
-    }
-    void concatenate_front (list & existing_list)
-    {
-        if (existing_list.count==0)
-            return;
-        if (count == 0)
-        {
-            head = existing_list.head;
-            tail = existing_list.tail;
-        }
-        else
-        {
-            head->previous = existing_list.tail;
-            existing_list.tail->next = head;
-            head = existing_list.head;
-            head->previous = NULL;
-        }
-        count = count + existing_list.count;
-        existing_list.set();
-        save_mode = 0;
-        switch_save_mode();
-    }
-    void concatenate_back (list & existing_list)
-    {
-        if (existing_list.count==0)
-            return;
-        if (count == 0)
-        {
-            head = existing_list.head;
-            tail = existing_list.tail;
-        }
-        else
-        {
-            tail->next = existing_list.head;
-            existing_list.head->previous = tail;
-            tail = existing_list.tail;
-            tail->next = NULL;
-        }
-        count = count + existing_list.count;
-        existing_list.set();
-        switch_save_mode();
-    }
-    void concatenate (list & new_list, unsigned index)
-    {
-        if (new_list.count==0)
-            return;
-        if (index==0)
-            concatenate_front (new_list);
-        else if (index>=count)
-            concatenate_back (new_list);
-        else
-        {
-            find_node (index-1);
-            current->next->previous = new_list.tail;
-            new_list.tail->next = current->next;
-            current->next = new_list.head;
-            new_list.head->previous = current;
-            count = count + new_list.count;
-            new_list.set();
-            save_mode = 0;
-            switch_save_mode();
-        }
-    }
-    void exchange_data (unsigned index1, unsigned index2)
-    {
-        if (index1>=count || index2>=count)
-            return;
-        data_type data;
-        find_node (index1);
-        save_current_node ();
-        node* current_b = current;
-        find_node (index2);
-        save_current_node ();
-        data = current->data;
-        current->data = current_b->data;
-        current_b->data = data;
     }
     void clear ()
     {
-        while (count != 0)
+        while (size_ != 0)
         {
-            node* temp;
-            temp = tail;
-            tail = tail->previous;
+            node* temp = last;
+            last = last->left;
             delete temp;
-            count--;
+            size_--;
         }
-        set();
+    }
+    auto size ()
+    {
+        return size_;
     }
     bool empty ()
     {
-        if (count==0)
+        if (size_ == 0)
             return true;
         else
             return false;
     }
-    int size ()
+    auto get_objectID() {
+        return objectID;
+    }
+    data_type& begin ()
     {
-        return count;
+        return first->data;
+    }
+    data_type& end ()
+    {
+        return last->data;
+    }
+    
+    void push_back (data_type new_data)
+    {
+        if (size_ == 0)
+            initialize();
+        else
+            add_node_back();
+        last->data = new_data;
+    }
+    void push_front (data_type new_data)
+    {
+        if (size_ == 0)
+            initialize();
+        else
+            add_node_front();
+        first->data = new_data;
+    }
+    void push (long index, data_type new_data)
+    {
+        if (size_==0)
+        {
+            push_back(new_data);
+            return;
+        }
+        adjust_index(index);
+        if (index == 0)
+            push_front(new_data);
+        else
+        {
+            find_node(index);
+            node* new_node = new node;
+            new_node->data = new_data;
+            current->left->right = new_node;
+            new_node->left = current->left;
+            new_node->right = current;
+            current->left = new_node;
+            size_++;
+            if (savedA_i >= current_i)
+                savedA_i++;
+            if (savedB_i >= current_i)
+                savedB_i++;
+            current_i++;
+            save_current_node();
+        }
+    }
+    data_type pop_back ()
+    {
+        if (size_ == 0)
+            return NULL;
+        if (size_ == 1)
+            return uninitialize();
+        data_type temp = last->data;
+        last = last->left;
+        last->right = first;
+        first->left = last;
+        size_--;
+        current = last;
+        current_i = size_ - 1;
+        return temp;
+    }
+    data_type pop_front ()
+    {
+        if (size_ == 0)
+            return NULL;
+        if (size_ == 1)
+            return uninitialize();
+        node* temp = first;
+        first = first->right;
+        first->left = last;
+        last->right = first;
+        if (temp == savedA)
+            savedA = savedA->right;
+        else
+            savedA_i--;
+        if (temp == savedB)
+            savedB = savedB->right;
+        else
+            savedB_i--;
+        data_type temp_data = temp->data;
+        delete temp;
+        size_--;
+        current = first;
+        current_i = 0;
+        save_current_node();
+        return temp_data;
+    }
+    data_type pop (long index)
+    {
+        if (size_ == 0)
+            return NULL;
+        if (size_ == 1)
+            return uninitialize();
+        adjust_index(index);
+        if (index == 0)
+            return pop_front();
+        if (index == size_-1)
+            return pop_back();
+        find_node(index);
+        current->left->right = current->right;
+        current->right->left = current->left;
+        if (index == savedA_i)
+            savedA = savedA->right;
+        else if (index < savedA_i)
+            savedA_i--;
+        if (index == savedB_i)
+            savedB = savedB->right;
+        else if (index < savedB_i)
+            savedB_i--;
+        node* temp_node = current;
+        current = current->right;
+        data_type temp = temp_node->data;
+        delete temp_node;
+        size_--;
+        save_current_node();
+        return temp;
+    }
+    void move_front (long start_index, long end_index)
+    {
+        adjust_index(start_index);
+        adjust_index(end_index);
+        if (start_index > end_index || start_index == 0)
+            return;
+        find_node(start_index);
+        node* start = current;
+        find_node(end_index);
+        node* end = current;
+        if (end == last)
+            last = first->left;
+        start->left->right = end->right;
+        end->right->left = start->left;
+        end->right = first;
+        first->left = end;
+        first = start;
+        first->left = last;
+        last->right = first;
+        reset_saved();
+    }
+    void move_back (long start_index, long end_index)
+    {
+        adjust_index(start_index);
+        adjust_index(end_index);
+        if (start_index > end_index || end_index == size_-1)
+            return;
+        find_node(start_index);
+        node* start = current;
+        find_node(end_index);
+        node* end = current;
+        if (start == first)
+            first = end->right;
+        start->left->right = end->right;
+        end->right->left = start->left;
+        start->left = last;
+        last->right = start;
+        last = end;
+        last->right = first;
+        first->left = last;
+        last->right = first;
+        reset_saved();
+    }
+    void move (long start_index, long end_index, long target_index)
+    {
+        adjust_index(start_index);
+        adjust_index(end_index);
+        if (target_index >= start_index && target_index <= end_index+1)
+            return;
+        if (target_index == 0)
+            move_front(start_index, end_index);
+        else if (target_index == size_)
+            move_back(start_index, end_index);
+        else
+        {
+            find_node(start_index);
+            node* start = current;
+            find_node(end_index);
+            node* end = current;
+            find_node(target_index);
+            node* target = current;
+            start->left->right = end->right;
+            end->right->left = start->left;
+            start->left = target->left;
+            target->left->right = start;
+            target->left = end;
+            end->right = target;
+            reset_saved();
+        }
+    }
+    void extract (long start_index, long end_index, list & dest)
+    {
+        adjust_index(start_index);
+        adjust_index(end_index);
+        if (start_index > end_index)
+            return;
+        find_node(start_index);
+        node* start = current;
+        find_node(end_index);
+        node* end = current;
+        if (start==first)
+            first = end->right;
+        if (end==last)
+            last = start->left;
+        start->left->right = end->right;
+        end->right->left = start->left;
+        last->right = first;
+        first->left = last;
+        size_ = size_ - (end_index - start_index + 1);
+        if (size_ == 0)
+            set();
+        else
+            reset_saved();
+        dest.clear();
+        dest.first = start;
+        dest.last = end;
+        dest.last->right = dest.first;
+        dest.first->left = dest.last;
+        dest.size_ = end_index - start_index + 1;
+        dest.reset_saved();
+    }
+    void split_in_half (list & secHalf)
+    {
+        if (size_<=1 || objectID==secHalf.objectID)
+            return;
+        secHalf.clear();
+        long midPoint = size_-(size_/2)-1;
+        find_node(midPoint);
+        node* temp = last;
+        last = current;
+        secHalf.first = current->right;
+        last->right = first;
+        first->left = last;
+        long oldSize = size_;
+        size_ = midPoint+1;
+        secHalf.last = temp;
+        secHalf.last->right = secHalf.first;
+        secHalf.first->left = secHalf.last;
+        secHalf.size_ = oldSize - size_;
+        reset_saved();
+        secHalf.reset_saved();
+    }
+    void merge (list & dest)
+    {
+        if (dest.size_==0 || objectID==dest.objectID)
+            return;
+        if (size_==0)
+        {
+            first = dest.first;
+            last = dest.last;
+            size_ = dest.size_;
+            reset_saved();
+            dest.set();
+            return;
+        }
+        last->right = dest.first;
+        dest.first->left = last;
+        last = dest.last;
+        last->right = first;
+        first->left = last;
+        size_ = size_+dest.size_;
+        reset_saved();
+        dest.set();
+    }
+    template<class data_type2, class data_type3>
+    void sort(data_type2 access_data(data_type3), bool descending=false)
+    {
+        bool (*compare)(data_type2, data_type2);
+        if (descending == true)
+            compare = [](data_type2 a, data_type2 b){return a>=b? true : false;};
+        else
+            compare = [](data_type2 a, data_type2 b){return a<=b? true : false;};
+        mergeSort(*this, 0, size_-1, access_data, compare);
+    }
+    void sort(bool descending=false)
+    {
+        bool (*compare)(data_type, data_type);
+        if (descending == true)
+            compare = [](data_type a, data_type b){return a>=b? true : false;};
+        else
+            compare = [](data_type a, data_type b){return a<=b? true : false;};
+        data_type (*default_f)(data_type) = [](data_type a){return a;};
+        mergeSort(*this, 0, size_-1, default_f, compare);
+    }
+    data_type& operator [] (long index)
+    {
+        adjust_index(index);
+        find_node(index);
+        save_current_node();
+        return current->data;
+    }
+    void operator = (const list & source)
+    {
+        clear();
+        node* temp = source.first;
+        for (long i=0; i<source.size_; i++)
+        {
+            push_back(temp->data);
+            temp = temp->right;
+        }
+    }
+    list<data_type> operator + (list & nextObj)
+    {
+        list<data_type> new_list = *this;
+        for (auto i=0; i<nextObj.size(); i++)
+        {
+            new_list.push_back(nextObj[i]);
+        }
+        return new_list;
+    }
+    list<data_type> operator + (unsigned new_node)
+    {
+        for (auto i=0; i<new_node; i++)
+        {
+            this->add_node_back();
+        }
+        return *this;
     }
 private: //------------------------------------------------------------
     void set ()
     {
-        head = NULL;
-        tail = NULL;
-        current = NULL;
-        count = 0;
-        save_mode = 0;
+        size_ = 0;
+        first = NULL;
+        last = NULL;
+        savedA = NULL;
+        savedB = NULL;
+        save_turn = 0;
     }
-    void initialize (node* & new_node)
+    void reset_saved ()
     {
-        new_node->previous = NULL;
-        new_node->next = NULL;
-        tail = new_node;
-        head = new_node;
+        current = first;
+        current_i = 0;
+        savedA = first;
+        savedB = first;
+        savedA_i = 0;
+        savedB_i = 0;
     }
-    node* make_node (data_type new_data)
+    void initialize (data_type new_data)
     {
-        node* new_node;
-        new_node = new node;
+        node* new_node = new node;
         new_node->data = new_data;
-        return new_node;
+        first = new_node;
+        first->right = first;
+        first->left = first;
+        last = first;
+        reset_saved();
+        size_ = 1;
     }
-    void move_forward (unsigned index)
+    void initialize ()
     {
-        while (current_i < index)
-        {
-            current = current->next;
-            current_i++;
-        }
+        node* new_node = new node;
+        first = new_node;
+        first->right = first;
+        first->left = first;
+        last = first;
+        reset_saved();
+        size_ = 1;
     }
-    void move_backward (unsigned index)
+    data_type uninitialize ()
     {
-        while (current_i > index)
-        {
-            current = current->previous;
-            current_i--;
-        }
+        size_ = 0;
+        data_type temp = first->data;
+        delete first;
+        set();
+        return temp;
     }
-    int start_index (unsigned index)
+    void adjust_index (long & index)
     {
-        int distance[4];
-        distance[0] = index; //head
-        distance[1] = count - index - 1; //tail
-        distance[2] = savedA_index - index;
-        if (distance[2] < 0)
-            distance[2] = distance[2] * (-1);
-        distance[3] = savedB_index - index;
-        if (distance[3] < 0)
-            distance[3] = distance[3] * (-1);
-        int selected_node = 0;
-        int selected_distance = distance[0];
-        for (int i=1; i<4; i++)
-        {
-            if (distance[i] < selected_distance)
-            {
-                selected_node = i;
-                selected_distance = distance[i];
-            }
-            
-        }
-        return selected_node;
+        index = index % size_;
+        if (index < 0)
+            index = index + size_;
     }
-    void find_node_basic (unsigned index)
+    void find_node (long & index)
     {
-        if (index < (count-index))
+        long distanceA = index - savedA_i;
+        if (abs(distanceA) > size_/2)
         {
-            current = head;
-            current_i = 0;
-            move_forward (index);
+            if (distanceA > 0)
+                distanceA = abs(distanceA) - size_;
+            else
+                distanceA = size_ - abs(distanceA);
         }
-        else
+        long distanceB = index - savedB_i;
+        if (abs(distanceB) > size_/2)
         {
-            current = tail;
-            current_i = count - 1;
-            move_backward (index);
+            if (distanceB > 0)
+                distanceB = abs(distanceB) - size_;
+            else
+                distanceB = size_ - abs(distanceA);
         }
-    }
-    void find_node (unsigned index)
-    {
-        if (save_mode == 0)
-        {
-            find_node_basic (index);
-            return;
-        }
-        int selected = start_index (index);
-        if (selected == 0)
-        {
-            current = head;
-            current_i = 0;
-            move_forward (index);
-            return;
-        }
-        if (selected == 1)
-        {
-            current = tail;
-            current_i = count - 1;
-            move_backward (index);
-            return;
-        }
-        if (selected == 2)
+        if (abs(distanceA) <= abs(distanceB))
         {
             current = savedA;
-            current_i = savedA_index;
+            current_i = savedA_i;
+            move_to_node(distanceA);
         }
         else
         {
             current = savedB;
-            current_i = savedB_index;
+            current_i = savedB_i;
+            move_to_node(distanceB);
         }
-        if (index > current_i)
-            move_forward (index);
-        else if (index < current_i)
-            move_backward (index);
+        adjust_index(current_i);
     }
-    void bypass_range (node* & start, node* & end, unsigned start_index, unsigned end_index)
+    void move_to_node (long distance)
     {
-        find_node (start_index);
-        start = current;
-        find_node (end_index);
-        end = current;
-        if (start == head)
+        if (distance > 0)
         {
-            head = end->next;
-            head->previous = NULL;
-            end->next = NULL;
-            return;
+            while (distance)
+            {
+                current = current->right;
+                current_i++;
+                distance--;
+            }
         }
-        if (end == tail)
+        else if (distance < 0)
         {
-            tail = start->previous;
-            tail->next = NULL;
-            start->previous = NULL;
-            return;
+            while (distance)
+            {
+                current = current->left;
+                current_i--;
+                distance++;
+            }
         }
-        start->previous->next = end->next;
-        end->next->previous = start->previous;
-        start->previous = NULL;
-        end->next = NULL;
-    }
-    void connect_range_front (node* & start, node* & end)
-    {
-        end->next = head;
-        head->previous = end;
-        head = start;
-    }
-    void connect_range_back (node* & start, node* & end)
-    {
-        tail->next = start;
-        start->previous = tail;
-        tail = end;
-    }
-    void connect_range_middle (node* & start, node* & end, node* & target)
-    {
-        target->previous->next = start;
-        start->previous = target->previous;
-        end->next = target;
-        target->previous = end;
-    }
-    void set_save_mode ()
-    {
-        find_node (count/3);
-        savedA = current;
-        savedA_index = current_i;
-        find_node (count*2/3);
-        savedB = current;
-        savedB_index = current_i;
-        save_mode = 1;
-        save_turn = 0;
-    }
-    void switch_save_mode ()
-    {
-        if (save_mode == 1 && count >= save_factor)
-            return;
-        if (save_mode == 0 && count < save_factor)
-            return;
-        if (save_mode == 1 && count < save_factor)
-            save_mode = 0;
-        if (save_mode == 0 && count >= save_factor)
-            set_save_mode();
     }
     void save_current_node ()
     {
-        if (save_mode == 0 || current_i < save_factor/3 || current_i > count-save_factor*2/3)
-            return;
-        if (save_turn == 0)
+        if (!save_turn)
         {
             savedA = current;
-            savedA_index = current_i;
+            savedA_i = current_i;
         }
         else
         {
             savedB = current;
-            savedB_index = current_i;
+            savedB_i = current_i;
         }
         save_turn = (~save_turn) & 1;
     }
-    void update_saved_nodes_push (unsigned index)
+    void add_node_back()
     {
-        if (save_mode == 0)
-            return;
-        if (index <= savedA_index)
-            savedA_index++;
-        if (index <= savedB_index)
-            savedB_index++;
+        if (size_ == 0)
+            initialize ();
+        else
+        {
+            node* new_node = new node;
+            last->right = new_node;
+            new_node->left = last;
+            last = last->right;
+            last->right = first;
+            first->left = last;
+            size_++;
+            current = last;
+            current_i = size_-1;
+            save_current_node();
+        }
     }
-    void update_save_nodes_pop (unsigned index)
+    void add_node_front()
     {
-        if (save_mode == 0)
-            return;
-        if (savedA_index > index)
+        if (size_ == 0)
+            initialize ();
+        else
         {
-            if (savedA_index > save_factor*2/3)
-                savedA_index--;
-            else if (savedA_index <= save_factor*2/3)
-                savedA = savedA->next;
+            node* new_node = new node;
+            first->left = new_node;
+            new_node->right = first;
+            first = new_node;
+            last->right = first;
+            first->left = last;
+            savedA_i++;
+            savedB_i++;
+            size_++;
+            current = first;
+            current_i = 0;
+            save_current_node();
         }
-        else if (savedA_index < index && savedA_index >= count-2)
+    }
+    template<class data_type2, class data_type3>
+    void merge(list<data_type> &arr, long l, long m, long r, data_type2 access_data(data_type3), bool compare(data_type2, data_type2))
+    {
+        long i, j, k;
+        auto n1 = m - l + 1;
+        auto n2 =  r - m;
+        data_type *L = new data_type[n1];
+        data_type *R = new data_type[n2];
+        for (i = 0; i < n1; i++)
+            L[i] = arr[l + i];
+        for (j = 0; j < n2; j++)
+            R[j] = arr[m + 1+ j];
+        i = 0;
+        j = 0;
+        k = l;
+        while (i < n1 && j < n2)
         {
-            savedA = savedA->previous;
-            savedA_index--;
-        }
-        else if (savedA_index == index)
-        {
-            if (savedA_index >= count-(save_factor/2))
+            if (compare(access_data(L[i]), access_data(R[j])))
             {
-                savedA = savedA->previous;
-                savedA_index--;
+                arr[k] = L[i];
+                i++;
             }
             else
-                savedA = savedA->next;
-        }
-        if (savedB_index > index)
-        {
-            if (savedB_index > save_factor*2/3)
-                savedB_index--;
-            else if (savedB_index <= save_factor*2/3)
-                savedB = savedB->next;
-        }
-        else if (savedB_index < index && savedB_index >= count-2)
-        {
-            savedB = savedB->previous;
-            savedB_index--;
-        }
-        else if (savedB_index == index)
-        {
-            if (savedB_index >= count-(save_factor/2))
             {
-                savedB = savedB->previous;
-                savedB_index--;
+                arr[k] = R[j];
+                j++;
             }
-            else
-                savedB = savedB->next;
+            k++;
+        }
+        while (i < n1)
+        {
+            arr[k] = L[i];
+            i++;
+            k++;
+        }
+        while (j < n2)
+        {
+            arr[k] = R[j];
+            j++;
+            k++;
+        }
+        delete [] L;
+        delete [] R;
+    }
+    template<class data_type2, class data_type3>
+    void mergeSort(list<data_type> &arr, long l, long r, data_type2 data_access_method(data_type3), bool compare(data_type2, data_type2))
+    {
+        if (l < r)
+        {
+            long m = l+(r-l)/2;
+            mergeSort(arr, l, m, data_access_method, compare);
+            mergeSort(arr, m+1, r, data_access_method, compare);
+      
+            merge(arr, l, m, r, data_access_method, compare);
         }
     }
 };
 
+template <class data_type>
+int list<data_type>::currentObject = 0;
 
 };
+
 
 #endif /* listDS_h */
 

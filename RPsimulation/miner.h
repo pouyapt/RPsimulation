@@ -1,5 +1,6 @@
-#include "STDLibraries.h"
+#include "coreDataType.h"
 #include "listDS.h"
+#include "generators.h"
 
 #ifndef miner_h
 #define miner_h
@@ -8,20 +9,30 @@ class Miner {
 private:
     std::string firstName;
     std::string lastName;
-    std::string idValue;
-    int joinedTimestamp;
+    long idValue;
+    std::time_t joinedTimestamp;
     float reputation;
-    struct currentRound {
-        double collectedRewards;
-        int roundNumber;
-        std::string miningPool;
-        int violationsCount;
-    };
-    struct allRounds {
-        double collectedRewards;
-        int roundsPlayed;
-    };
+    int miningPower;
+    int violationsCount;
+    double alltimeRewards;
+    int roundsPlayed;
+    double dishonestyFactor;
+    core::random gen;
+public:
+    Miner();
+    Miner operator=(const Miner & orig);
+    std::string getFirstName();
+    std::string getLastName();
+    long getID();
+    long getJoinedTimestamp();
+    float getReputation();
+    int getMiningPower();
+    int& violation();
+    int& roundPlayed();
+    double dFact();
+    void initialize();
+    void print();
 };
-
+    
 
 #endif
