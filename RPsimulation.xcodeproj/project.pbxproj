@@ -31,6 +31,8 @@
 		92BB30312447BAF2006EDB1E /* RPsimulation */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = RPsimulation; sourceTree = BUILT_PRODUCTS_DIR; };
 		92BB30342447BAF2006EDB1E /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		92BB303B2447BB3E006EDB1E /* miner.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = miner.h; sourceTree = "<group>"; };
+		92EACD42245B6ADB0029360E /* poolManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = poolManager.h; sourceTree = "<group>"; };
+		92EACD43245B6FBA0029360E /* miningPool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = miningPool.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,8 +68,10 @@
 				92BB30342447BAF2006EDB1E /* main.cpp */,
 				92ADCC002448EF6C00BC2F59 /* generators.h */,
 				92ADCBFD2448E3A700BC2F59 /* listDS.h */,
+				92EACD42245B6ADB0029360E /* poolManager.h */,
 				92BB303B2447BB3E006EDB1E /* miner.h */,
 				925F2E112453BD3F000FA1DF /* miner.cpp */,
+				92EACD43245B6FBA0029360E /* miningPool.h */,
 				92ADCBF82448E1ED00BC2F59 /* coreDataType.h */,
 			);
 			path = RPsimulation;
@@ -99,7 +103,7 @@
 		92BB30292447BAF2006EDB1E /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1140;
+				LastUpgradeCheck = 1150;
 				ORGANIZATIONNAME = PouyApps;
 				TargetAttributes = {
 					92BB30302447BAF2006EDB1E = {
@@ -250,6 +254,7 @@
 		92BB30392447BAF2006EDB1E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = GW7C4B9S25;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -260,6 +265,7 @@
 		92BB303A2447BAF2006EDB1E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = GW7C4B9S25;
 				ENABLE_HARDENED_RUNTIME = YES;

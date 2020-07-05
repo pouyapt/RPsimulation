@@ -1,3 +1,5 @@
+#include "coreDataType.h"
+
 #ifndef generators_h
 #define generators_h
 
@@ -123,12 +125,12 @@ private:
         }
     }
 public:
-    long id_number(int lowBound, int highBound) {
+    unsigned int id_number(unsigned int lowBound, unsigned int highBound) {
         std::mt19937 eng(ran());
-        std::uniform_int_distribution<> distr(lowBound, highBound);
+        std::uniform_int_distribution<unsigned int> distr(lowBound, highBound);
         return distr(eng);
     }
-    auto string_name() {
+    auto name() {
         int length = get_length();
         int temp[length];
         std::string name;
@@ -145,19 +147,33 @@ public:
     }
     auto minig_power() {
         std::mt19937 gen{ran()};
-        std::normal_distribution<> d(50, 20);
-        double a = -1;
-        while (a<=6.5)
-            a = d(gen);
+        std::normal_distribution<> d(123, 8476);
+        double a = d(gen);
+        if (a<=4) {
+            a = (std::rand()%100)+6;
+        }
         return a;
     }
     auto dishonestyFactor() {
         std::mt19937 gen{ran()};
-        std::normal_distribution<> d(0, 3);
-        long double a = -1;
+        std::normal_distribution<> d(0, 4);
+        float a = -1;
         while (a<0)
             a = d(gen);
         return a;
+    }
+    std::string mining_pool_name() {
+        std::string name;
+        for (int i=0; i<3; i++) {
+            char g = int(id_number(66, 90));
+            name = name + g;
+        }
+        name = name + "-";
+        for (int i=0; i<3; i++) {
+            char g = id_number(48, 57);
+            name = name + g;
+        }
+        return name;
     }
 };
 

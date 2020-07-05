@@ -1,9 +1,10 @@
+#include <iostream>
 #include <sstream>
-#include <random>
-#include <string>
-#include<iostream>
-#include <chrono>
+#include <fstream>
 #include <vector>
+#include <string>
+#include <random>
+#include <chrono>
 
 #ifndef coreDataType_h
 #define coreDataType_h
