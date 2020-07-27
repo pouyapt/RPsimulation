@@ -1,12 +1,17 @@
-#include "miner.h"
+#include "structures.h"
 
-int main()
-{
-    system("mkdir temp");
-    auto DB = MinerPopulation(20, "temp/rr.txt");
-    std::cout << DB.totalHashPower() << std::endl;
+int main() {
+    MinerPopulation DB(0);
+    Pools P(DB);
+//    for (int i=0; i<P.size(); i++) {
+//        int n = 265;
+//        while (n) {
+//            P[i]->pickMiner(DB[rand()]);
+//            n--;
+//        }
+//    }
+    
+    DB.print();
+    
 }
-
-
-
 

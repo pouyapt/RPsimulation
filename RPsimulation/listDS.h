@@ -3,13 +3,13 @@
 
 namespace core {
 
-
 template <class data_type>
 class list
 {
-private: //------------------------------------------------------------
+private:
+    //------------------------------------------------------------
     struct node
-{
+    {
         data_type data;
         node* right;
         node* left;
@@ -26,13 +26,19 @@ private: //------------------------------------------------------------
     bool save_turn;
     int objectID;
     static int currentObject;
-public: //------------------------------------------------------------
+    static bool d_compare(data_type a, data_type b) {
+        return (a<b ? true : false);
+    }
+    bool (*compare)(data_type, data_type);
+public:
+    //------------------------------------------------------------
     list ()
     {
         set();
         currentObject++;
         objectID = currentObject;
     }
+    //------------------------------------------------------------
     list (unsigned size__)
     {
         set();
@@ -41,10 +47,12 @@ public: //------------------------------------------------------------
             add_node_back();
         }
     }
+    //------------------------------------------------------------
     ~list ()
     {
         clear();
     }
+    //------------------------------------------------------------
     list (const list & source)
     {
         set();
@@ -55,6 +63,7 @@ public: //------------------------------------------------------------
             temp = temp->right;
         }
     }
+    //------------------------------------------------------------
     void clear ()
     {
         while (size_ != 0)
@@ -65,10 +74,12 @@ public: //------------------------------------------------------------
             size_--;
         }
     }
+    //------------------------------------------------------------
     auto size ()
     {
         return size_;
     }
+    //------------------------------------------------------------
     bool empty ()
     {
         if (size_ == 0)
@@ -76,18 +87,22 @@ public: //------------------------------------------------------------
         else
             return false;
     }
-    auto get_objectID() {
+    //------------------------------------------------------------
+    auto get_objectID()
+    {
         return objectID;
     }
+    //------------------------------------------------------------
     data_type& begin ()
     {
         return first->data;
     }
+    //------------------------------------------------------------
     data_type& end ()
     {
         return last->data;
     }
-    
+    //------------------------------------------------------------
     void push_back (data_type new_data)
     {
         if (size_ == 0)
@@ -96,6 +111,7 @@ public: //------------------------------------------------------------
             add_node_back();
         last->data = new_data;
     }
+    //------------------------------------------------------------
     void push_front (data_type new_data)
     {
         if (size_ == 0)
@@ -104,6 +120,7 @@ public: //------------------------------------------------------------
             add_node_front();
         first->data = new_data;
     }
+    //------------------------------------------------------------
     void push (long index, data_type new_data)
     {
         if (size_==0)
@@ -132,6 +149,7 @@ public: //------------------------------------------------------------
             save_current_node();
         }
     }
+    //------------------------------------------------------------
     data_type pop_back ()
     {
         if (size_ == 0)
@@ -147,6 +165,7 @@ public: //------------------------------------------------------------
         current_i = size_ - 1;
         return temp;
     }
+    //------------------------------------------------------------
     data_type pop_front ()
     {
         if (size_ == 0)
@@ -173,6 +192,7 @@ public: //------------------------------------------------------------
         save_current_node();
         return temp_data;
     }
+    //------------------------------------------------------------
     data_type pop (long index)
     {
         if (size_ == 0)
@@ -203,6 +223,7 @@ public: //------------------------------------------------------------
         save_current_node();
         return temp;
     }
+    //------------------------------------------------------------
     void move_front (long start_index, long end_index)
     {
         adjust_index(start_index);
@@ -224,6 +245,7 @@ public: //------------------------------------------------------------
         last->right = first;
         reset_saved();
     }
+    //------------------------------------------------------------
     void move_back (long start_index, long end_index)
     {
         adjust_index(start_index);
@@ -246,6 +268,7 @@ public: //------------------------------------------------------------
         last->right = first;
         reset_saved();
     }
+    //------------------------------------------------------------
     void move (long start_index, long end_index, long target_index)
     {
         adjust_index(start_index);
@@ -273,6 +296,7 @@ public: //------------------------------------------------------------
             reset_saved();
         }
     }
+    //------------------------------------------------------------
     void extract (long start_index, long end_index, list & dest)
     {
         adjust_index(start_index);
@@ -304,6 +328,7 @@ public: //------------------------------------------------------------
         dest.size_ = end_index - start_index + 1;
         dest.reset_saved();
     }
+    //------------------------------------------------------------
     void split_in_half (list & secHalf)
     {
         if (size_<=1 || objectID==secHalf.objectID)
@@ -325,6 +350,7 @@ public: //------------------------------------------------------------
         reset_saved();
         secHalf.reset_saved();
     }
+    //------------------------------------------------------------
     void merge (list & dest)
     {
         if (dest.size_==0 || objectID==dest.objectID)
@@ -347,25 +373,11 @@ public: //------------------------------------------------------------
         reset_saved();
         dest.set();
     }
-    template<class data_type2, class data_type3>
-    void sort(data_type2 access_data(data_type3), bool descending=false)
+    //------------------------------------------------------------
+    void sort(bool c_compare(data_type,data_type)=d_compare)
     {
-        bool (*compare)(data_type2, data_type2);
-        if (descending == true)
-            compare = [](data_type2 a, data_type2 b){return a>=b? true : false;};
-        else
-            compare = [](data_type2 a, data_type2 b){return a<=b? true : false;};
-        mergeSort(*this, 0, size_-1, access_data, compare);
-    }
-    void sort(bool descending=false)
-    {
-        bool (*compare)(data_type, data_type);
-        if (descending == true)
-            compare = [](data_type a, data_type b){return a>=b? true : false;};
-        else
-            compare = [](data_type a, data_type b){return a<=b? true : false;};
-        data_type (*default_f)(data_type) = [](data_type a){return a;};
-        mergeSort(*this, 0, size_-1, default_f, compare);
+        compare = c_compare;
+        mergeSort(*this, 0, size_-1);
     }
     data_type& operator [] (long index)
     {
@@ -374,6 +386,7 @@ public: //------------------------------------------------------------
         save_current_node();
         return current->data;
     }
+    //------------------------------------------------------------
     void operator = (const list & source)
     {
         clear();
@@ -384,6 +397,7 @@ public: //------------------------------------------------------------
             temp = temp->right;
         }
     }
+    //------------------------------------------------------------
     list<data_type> operator + (list & nextObj)
     {
         list<data_type> new_list = *this;
@@ -393,6 +407,7 @@ public: //------------------------------------------------------------
         }
         return new_list;
     }
+    //------------------------------------------------------------
     list<data_type> operator + (unsigned new_node)
     {
         for (auto i=0; i<new_node; i++)
@@ -411,6 +426,7 @@ private: //------------------------------------------------------------
         savedB = NULL;
         save_turn = 0;
     }
+    //------------------------------------------------------------
     void reset_saved ()
     {
         current = first;
@@ -420,6 +436,7 @@ private: //------------------------------------------------------------
         savedA_i = 0;
         savedB_i = 0;
     }
+    //------------------------------------------------------------
     void initialize (data_type new_data)
     {
         node* new_node = new node;
@@ -431,6 +448,7 @@ private: //------------------------------------------------------------
         reset_saved();
         size_ = 1;
     }
+    //------------------------------------------------------------
     void initialize ()
     {
         node* new_node = new node;
@@ -441,6 +459,7 @@ private: //------------------------------------------------------------
         reset_saved();
         size_ = 1;
     }
+    //------------------------------------------------------------
     data_type uninitialize ()
     {
         size_ = 0;
@@ -449,12 +468,14 @@ private: //------------------------------------------------------------
         set();
         return temp;
     }
+    //------------------------------------------------------------
     void adjust_index (long & index)
     {
         index = index % size_;
         if (index < 0)
             index = index + size_;
     }
+    //------------------------------------------------------------
     void find_node (long & index)
     {
         long distanceA = index - savedA_i;
@@ -487,6 +508,7 @@ private: //------------------------------------------------------------
         }
         adjust_index(current_i);
     }
+    //------------------------------------------------------------
     void move_to_node (long distance)
     {
         if (distance > 0)
@@ -508,6 +530,7 @@ private: //------------------------------------------------------------
             }
         }
     }
+    //------------------------------------------------------------
     void save_current_node ()
     {
         if (!save_turn)
@@ -522,6 +545,7 @@ private: //------------------------------------------------------------
         }
         save_turn = (~save_turn) & 1;
     }
+    //------------------------------------------------------------
     void add_node_back()
     {
         if (size_ == 0)
@@ -540,6 +564,7 @@ private: //------------------------------------------------------------
             save_current_node();
         }
     }
+    //------------------------------------------------------------
     void add_node_front()
     {
         if (size_ == 0)
@@ -560,8 +585,8 @@ private: //------------------------------------------------------------
             save_current_node();
         }
     }
-    template<class data_type2, class data_type3>
-    void merge(list<data_type> &arr, long l, long m, long r, data_type2 access_data(data_type3), bool compare(data_type2, data_type2))
+    //------------------------------------------------------------
+    void merge(list<data_type> &arr, long l, long m, long r)
     {
         long i, j, k;
         auto n1 = m - l + 1;
@@ -577,7 +602,7 @@ private: //------------------------------------------------------------
         k = l;
         while (i < n1 && j < n2)
         {
-            if (compare(access_data(L[i]), access_data(R[j])))
+            if (compare(L[i], R[j]))
             {
                 arr[k] = L[i];
                 i++;
@@ -604,25 +629,25 @@ private: //------------------------------------------------------------
         delete [] L;
         delete [] R;
     }
-    template<class data_type2, class data_type3>
-    void mergeSort(list<data_type> &arr, long l, long r, data_type2 data_access_method(data_type3), bool compare(data_type2, data_type2))
+    //------------------------------------------------------------
+    void mergeSort(list<data_type> &arr, long l, long r)
     {
         if (l < r)
         {
             long m = l+(r-l)/2;
-            mergeSort(arr, l, m, data_access_method, compare);
-            mergeSort(arr, m+1, r, data_access_method, compare);
-      
-            merge(arr, l, m, r, data_access_method, compare);
+            mergeSort(arr, l, m);
+            mergeSort(arr, m+1, r);
+            merge(arr, l, m, r);
         }
     }
+    //------------------------------------------------------------
 };
 
 template <class data_type>
 int list<data_type>::currentObject = 0;
 
-};
 
+};
 
 #endif /* listDS_h */
 

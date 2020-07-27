@@ -1,7 +1,7 @@
-#include "coreDataType.h"
-
 #ifndef generators_h
 #define generators_h
+
+#include "system.h"
 
 namespace core {
 
@@ -27,8 +27,7 @@ private:
     float string_lengh_px[10] = {
         0.07,0.244,0.29,0.19,0.14,0.045,0.008,0.009,0.003,0.001
     };
-    std::string get_consonant ()
-    {
+    std::string get_consonant() {
         std::string consonant;
         float low_set1_fx;
         float high_set1_fx;
@@ -51,8 +50,7 @@ private:
         }
         return consonant;
     }
-    std::string get_vowel ()
-    {
+    std::string get_vowel() {
         std::string vowel;
         float low_set2_fx;
         float high_set2_fx;
@@ -75,8 +73,7 @@ private:
         }
         return vowel;
     }
-    int get_length ()
-    {
+    int get_length() {
         int length = 0;
         float low_length_fx = 0;
         float high_length_fx = string_lengh_px[0];
@@ -97,8 +94,7 @@ private:
         }
         return length;
     }
-    void name_template (int length, int* temp)
-    {
+    void name_template (int length, int* temp) {
         int digit;
         float ran_number;
         for (int i=0; i<length; i++)
@@ -148,19 +144,20 @@ public:
     auto minig_power() {
         std::mt19937 gen{ran()};
         std::normal_distribution<> d(123, 8476);
-        double a = d(gen);
-        if (a<=4) {
-            a = (std::rand()%100)+6;
-        }
+        std::uniform_int_distribution<> u(51, 195);
+        int a = d(gen);
+        if (a<=3)
+            a = u(gen);
         return a;
     }
     auto dishonestyFactor() {
         std::mt19937 gen{ran()};
-        std::normal_distribution<> d(0, 4);
-        float a = -1;
-        while (a<0)
+        std::normal_distribution<float> d(0, 10);
+        float a = 0;
+        do
             a = d(gen);
-        return a;
+        while (a<0.001);
+        return a/100;
     }
     std::string mining_pool_name() {
         std::string name;
@@ -175,9 +172,64 @@ public:
         }
         return name;
     }
+    auto new_population() {
+        std::mt19937 gen{ran()};
+        std::normal_distribution<> d(131, 86);
+        int a=0;
+        do
+            a = d(gen);
+        while (a<0);
+        return a;
+    }
+    int select_random_index(int min, int max) {
+        std::mt19937 gen{ran()};
+        std::uniform_int_distribution<> d(min, max);
+        int a = d(gen);
+        return a;
+    }
+    unsigned int random_hash(unsigned int min, unsigned int max) {
+        std::mt19937 gen{ran()};
+        std::uniform_int_distribution<> d(min, max);
+        unsigned int a = d(gen);
+        return a;
+    }
+    auto dishonestyThreshold() {
+        std::mt19937 gen{ran()};
+        std::normal_distribution<float> d(65, 22);
+        double a = 0;
+        do
+            a = d(gen);
+        while (a<0 || a>100);
+        return a/100;
+    }
+    int miningPowerExpander(int m) {
+        std::mt19937 gen{ran()};
+        std::normal_distribution<float> d(1.4, 2);
+        double a = 0;
+        do
+            a = d(gen);
+        while (a<1);
+        return m*a;
+    }
+    auto miningPowerConsumption() {
+        std::mt19937 gen{ran()};
+        std::normal_distribution<float> d(0.07, 0.04);
+        double a = 0;
+        do
+            a = d(gen);
+        while (a<0 || a>=0.09);
+        return a;
+    }
+    auto poolFee() {
+        std::mt19937 gen{ran()};
+        std::uniform_int_distribution<> d(14, 23);
+        float a = d(gen);
+        return a/10;
+    }
 };
 
 }
 
+static core::random gen;
 
 #endif /* generators_h */
