@@ -18,7 +18,7 @@ private:
     int dMiningPower;
     int detectedViolations;
     int allViolations;
-    float profit;
+    double profit;
     int roundsPlayed;
     double dishonestyFactor;
     bool taken;
@@ -27,7 +27,7 @@ private:
     int index;
     int oldIndex;
     bool endMining;
-    float powerConRate;
+    double powerConRate;
     void initialize();
     void generateInitialValues();
     PoolManager* pool;
@@ -44,6 +44,7 @@ public:
     friend bool compareOldIndex(Miner* a, Miner* b);
     friend bool compareDViolation(Miner* a, Miner* b);
     friend bool compareAViolation(Miner* a, Miner* b);
+    friend bool compareProfit(Miner* a, Miner* b);
     Miner(std::string option=" ");
     Miner operator=(const Miner & orig) = delete;
     std::string getFirstName();
@@ -54,15 +55,15 @@ public:
     int getMiningPower(std::string mode="real");
     int getDetectedViolations();
     int roundPlayed();
-    float getProfit();
+    double getProfit();
     bool isTaken();
     int getMined();
     bool miningIsEnded();
     int getIndex();
     void savePoolManager(PoolManager* poolManager);
     void removePoolManager(PoolManager* poolManager);
-    void receiveRewards(float amount);
-    void reduceCost(float amount);
+    void receiveRewards(double amount);
+    void reduceCost(double amount);
     void print();
 };
 
@@ -75,13 +76,13 @@ private:
     void initialize();
 protected:
     unsigned int TotalhashPower;
-    float poolFee;
-    float minedAmount;
+    double poolFee;
+    long double grossIncome;
     MiningPool();
     MiningPool operator=(const MiningPool & orig) = delete;
     unsigned size();
     std::string& poolName();
-    void distributeMinersReward(float amount);
+    void distributeMinersReward(double amount);
     void addMiner(Miner* miner);
     bool removeMiner(Miner* miner);
     bool minerIsMember(Miner* miner);
@@ -96,28 +97,27 @@ private:
     std::string firstName;
     std::string lastName;
     unsigned idValue;
-    float profit;
+    double profit;
     int mined;
     void initialize();
     void generate();
     void pushBack(Miner* miner);
 public:
     PoolManager(std::string mode="default");
-    ~PoolManager() {std::cout << "PoolM" << std::endl;}
     PoolManager operator=(const PoolManager & orig) = delete;
     void print();
     unsigned size();
     int getMined();
-    float getProfit();
+    double getProfit();
     std::string getFirstName();
     std::string getLastName();
     unsigned getID();
     std::string poolName();
     unsigned int poolHashPower();
-    float poolFee();
-    float poolRewards();
+    double poolFee();
+    double poolRewards();
     Miner* getMiner(unsigned index);
-    void receiveReward(float amount);
+    void receiveReward(double amount);
     bool pickMiner(Miner* miner);
     bool releaseMiner(Miner* miner);
     friend class Pools;

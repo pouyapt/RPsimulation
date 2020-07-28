@@ -1,5 +1,5 @@
-#ifndef system_h
-#define system_h
+#ifndef foundation_h
+#define foundation_h
 
 #include <iostream>
 #include <sstream>
@@ -12,5 +12,6 @@
 
 bool is_file_exist(const char *fileName);
 void databaseInit();
+double round_(double var);
 
 #endif /* system_h */

@@ -16,6 +16,7 @@ bool compareShuffleValue(Miner* a, Miner* b);
 bool compareOldIndex(Miner* a, Miner* b);
 bool compareDViolation(Miner* a, Miner* b);
 bool compareAViolation(Miner* a, Miner* b);
+bool compareProfit(Miner* a, Miner* b);
 
 //--------------------------------------------------------------------------------
 

@@ -11,7 +11,7 @@
 		925F2E122453BD3F000FA1DF /* BaseEntities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 925F2E112453BD3F000FA1DF /* BaseEntities.cpp */; };
 		928CC37324B4EC60000788F9 /* game.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 928CC37124B4EC60000788F9 /* game.cpp */; };
 		92BB30352447BAF2006EDB1E /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 92BB30342447BAF2006EDB1E /* main.cpp */; };
-		92BC1A0B24B2A498005E84CE /* system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 92BC1A0924B2A498005E84CE /* system.cpp */; };
+		92BC1A0B24B2A498005E84CE /* foundation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 92BC1A0924B2A498005E84CE /* foundation.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -37,8 +37,8 @@
 		92BB30312447BAF2006EDB1E /* RPsimulation */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = RPsimulation; sourceTree = BUILT_PRODUCTS_DIR; };
 		92BB30342447BAF2006EDB1E /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		92BB303B2447BB3E006EDB1E /* BaseEntities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BaseEntities.h; sourceTree = "<group>"; };
-		92BC1A0824B2A46A005E84CE /* system.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = system.h; sourceTree = "<group>"; };
-		92BC1A0924B2A498005E84CE /* system.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = system.cpp; sourceTree = "<group>"; };
+		92BC1A0824B2A46A005E84CE /* foundation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = foundation.h; sourceTree = "<group>"; };
+		92BC1A0924B2A498005E84CE /* foundation.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = foundation.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -71,8 +71,8 @@
 		92BB30332447BAF2006EDB1E /* RPsimulation */ = {
 			isa = PBXGroup;
 			children = (
-				92BC1A0824B2A46A005E84CE /* system.h */,
-				92BC1A0924B2A498005E84CE /* system.cpp */,
+				92BC1A0824B2A46A005E84CE /* foundation.h */,
+				92BC1A0924B2A498005E84CE /* foundation.cpp */,
 				92ADCBFD2448E3A700BC2F59 /* listDS.h */,
 				92ADCC002448EF6C00BC2F59 /* generators.h */,
 				92BB303B2447BB3E006EDB1E /* BaseEntities.h */,
@@ -146,7 +146,7 @@
 				92BB30352447BAF2006EDB1E /* main.cpp in Sources */,
 				925F2E122453BD3F000FA1DF /* BaseEntities.cpp in Sources */,
 				921F5D4224C3B21D00970137 /* structures.cpp in Sources */,
-				92BC1A0B24B2A498005E84CE /* system.cpp in Sources */,
+				92BC1A0B24B2A498005E84CE /* foundation.cpp in Sources */,
 				928CC37324B4EC60000788F9 /* game.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

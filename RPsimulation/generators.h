@@ -1,7 +1,7 @@
 #ifndef generators_h
 #define generators_h
 
-#include "system.h"
+#include "foundation.h"
 
 namespace core {
 
@@ -213,11 +213,11 @@ public:
     }
     auto miningPowerConsumption() {
         std::mt19937 gen{ran()};
-        std::normal_distribution<float> d(0.07, 0.04);
+        std::normal_distribution<float> d(0.05, 0.02);
         double a = 0;
         do
             a = d(gen);
-        while (a<0 || a>=0.09);
+        while (a<0.01 || a>=0.075);
         return a;
     }
     auto poolFee() {

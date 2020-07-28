@@ -20,8 +20,9 @@ Miner* winerMiner(MinerPopulation & DB) {
 
 void updateMinersPowerCost(MinerPopulation & DB) {
     for (int i=0; i<DB.size(); i++) {
-        float powerCost = (DB[i]->getMiningPower()/HPperPC) * MT * DB[i]->powerConRate;
+        double powerCost = round_((double(DB[i]->getMiningPower())/double(HPperPC)) * double(MT) * double(DB[i]->powerConRate));
         DB[i]->reduceCost(powerCost);
+        DB[i]->roundsPlayed++;
     }
 }
 
@@ -29,9 +30,9 @@ void mineGame(MinerPopulation & DB) {
     updateMinersPowerCost(DB);
     Miner* winner = winerMiner(DB);
     if (winner->pool==NULL)
-        winner->receiveRewards(unitPrice);
+        winner->receiveRewards(UP);
     else
-        winner->pool->receiveReward(unitPrice);
+        winner->pool->receiveReward(UP);
     winner->mined++;
 }
 

@@ -24,14 +24,14 @@ long Miner::getJoinedTimestamp() {
 }
 
 int Miner::getMiningPower(std::string mode) {
-    if (mode=="mine") {
-        double x = gen.dishonestyThreshold();
-        if (dishonestyFactor > x) {
-            dMiningPower = gen.miningPowerExpander(miningPower);
-            allViolations++;
-            return dMiningPower;
-        }
-    }
+//    if (mode=="mine") {
+//        double x = gen.dishonestyThreshold();
+//        if (dishonestyFactor > x) {
+//            dMiningPower = gen.miningPowerExpander(miningPower);
+//            allViolations++;
+//            return dMiningPower;
+//        }
+//    }
     return miningPower;
 }
 
@@ -47,7 +47,7 @@ double Miner::getReputation() {
     return reputation;
 }
 
-float Miner::getProfit() {
+double Miner::getProfit() {
     return profit;
 }
 
@@ -105,32 +105,32 @@ void Miner::generateInitialValues() {
     powerConRate = gen.miningPowerConsumption();
 }
 
-void Miner::receiveRewards(float amount) {
+void Miner::receiveRewards(double amount) {
     profit += amount;
 }
 
-void Miner::reduceCost(float amount) {
+void Miner::reduceCost(double amount) {
     profit -= amount;
 }
 
 void Miner::print() {
     std::cout << "------------------------------------------\n";
-    std::cout << "Name:\t\t" << firstName << " " << lastName << std::endl;
-    std::cout << "ID No:\t\t" << idValue << std::endl;
-    std::cout << "Jonied:\t\t" << std::asctime(std::localtime(&joinedTimestamp));
-    std::cout << "mPower:\t\t" << miningPower << std::endl;
-    std::cout << "dFact:\t\t" << dishonestyFactor << std::endl;
-    std::cout << "PCrate:\t\t" << powerConRate << std::endl;
+    std::cout << "Name:    \t\t" << firstName << " " << lastName << std::endl;
+    std::cout << "ID:      \t\t" << idValue << std::endl;
+    std::cout << "Jonied:  \t\t" << std::asctime(std::localtime(&joinedTimestamp));
+    std::cout << "Hash Rate:\t\t" << miningPower << std::endl;
+    std::cout << "DH Factor:\t\t" << dishonestyFactor << std::endl;
+    std::cout << "Power Rate:\t\t" << powerConRate << std::endl;
     if (pool!=NULL)
-        std::cout << "Pool:\t\t" << pool->poolName() << std::endl;
+        std::cout << "Pool Name:\t\t" << pool->poolName() << std::endl;
     else
-        std::cout << "Pool:\t\t" << " " << std::endl;
-    std::cout << "mined:\t\t" << mined << std::endl;
-    std::cout << "Profit:\t\t" << profit << std::endl;
-    std::cout <<  "Reput:\t\t" << reputation << std::endl;
-    std::cout << "Played:\t\t" << roundsPlayed << std::endl;
-    std::cout << "dViol:\t\t" << detectedViolations << std::endl;
-    std::cout << "aViol:\t\t" << allViolations << std::endl;
+        std::cout << "Pool Name:\t" << " " << std::endl;
+    std::cout << "Mined Count:\t" << mined << std::endl;
+    std::cout << "Net Profit:\t\t" << profit << std::endl;
+    std::cout <<  "Reputation:\t\t" << reputation << std::endl;
+    std::cout << "Play Count:\t\t" << roundsPlayed << std::endl;
+    std::cout << "D Violation:\t" << detectedViolations << std::endl;
+    std::cout << "A Violation:\t" << allViolations << std::endl;
     std::cout << "------------------------------------------\n";
 }
 
@@ -148,7 +148,7 @@ void MiningPool::initialize() {
     name = gen.mining_pool_name();
     poolFee = gen.poolFee();
     TotalhashPower = 0;
-    minedAmount = 0;
+    grossIncome = 0;
 }
 
 unsigned MiningPool::size() {
@@ -160,9 +160,9 @@ std::string& MiningPool::poolName() {
 }
 
 
-void MiningPool::distributeMinersReward(float amount) {
+void MiningPool::distributeMinersReward(double amount) {
     for (int i=0; i<miners.size(); i++) {
-        float minersShare = (miners[i]->getMiningPower()/TotalhashPower)*amount;
+        double minersShare = (double(miners[i]->getMiningPower())/double(TotalhashPower))*amount;
         miners[i]->receiveRewards(minersShare);
     }
 }
@@ -179,6 +179,7 @@ void MiningPool::addMiner(Miner* miner) {
 bool MiningPool::removeMiner(Miner* miner) {
     for (int i=0; i<miners.size(); i++) {
         if (miner==miners[i]) {
+            TotalhashPower -= miner->getMiningPower();
             miners.pop(i);
             return true;
         }
@@ -246,26 +247,27 @@ unsigned int PoolManager::poolHashPower() {
     return MiningPool::TotalhashPower;
 }
 
-float PoolManager::poolFee() {
+double PoolManager::poolFee() {
     return MiningPool::poolFee;
 }
 
-float PoolManager::poolRewards() {
-    return MiningPool::minedAmount;
+double PoolManager::poolRewards() {
+    return MiningPool::grossIncome;
 }
 
 int PoolManager::getMined() {
     return mined;
 }
 
-float PoolManager::getProfit() {
+double PoolManager::getProfit() {
     return profit;
 }
 
-void PoolManager::receiveReward(float amount) {
-    minedAmount += amount;
-    profit += amount*MiningPool::poolFee;
+void PoolManager::receiveReward(double amount) {
+    grossIncome += amount;
+    profit += amount*(MiningPool::poolFee/100);
     amount -= profit;
+    mined++;
     MiningPool::distributeMinersReward(amount);
 }
 
@@ -287,14 +289,14 @@ bool PoolManager::releaseMiner(Miner* miner) {
 
 void PoolManager::print() {
     std::cout << "------------------------------------------\n";
-    std::cout << "Name:\t\t" << firstName << " " << lastName << std::endl;
-    std::cout << "ID No:\t\t" << idValue << std::endl;
-    std::cout << "Pool:\t\t" << poolName() << std::endl;
-    std::cout << "P-Fee:\t\t" << poolFee() << std::endl;
-    std::cout << "Miners:\t\t" << size() << std::endl;
-    std::cout << "HashP:\t\t" << poolHashPower() << std::endl;
-    std::cout << "Profit:\t\t" << profit << std::endl;
-    std::cout << "Mined:\t\t" << mined << std::endl;
+        std::cout << "Pool Name:\t\t" << poolName() << std::endl;
+    std::cout << "ID Number:\t\t" << idValue << std::endl;
+    std::cout << "Pool Fee:\t\t" << poolFee() << std::endl;
+    std::cout << "Manager:\t\t" << firstName << " " << lastName << std::endl;
+    std::cout << "Miners C:\t\t" << size() << std::endl;
+    std::cout << "HashPower:\t\t" << poolHashPower() << std::endl;
+    std::cout << "All Profit:\t\t" << profit << std::endl;
+    std::cout << "Mined C:\t\t" << mined << std::endl;
     std::cout << "------------------------------------------\n";
 }
 

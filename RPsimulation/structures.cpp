@@ -36,6 +36,10 @@ bool compareAViolation(Miner* a, Miner* b) {
     return (a->allViolations >= b->allViolations ? true : false);
 }
 
+bool compareProfit(Miner* a, Miner* b) {
+    return (a->profit >= b->profit ? true : false);
+}
+
 //----------------------------------------------------------------------------------
 
 MinerPopulation::MinerPopulation(int population, std::string file) {
@@ -175,15 +179,17 @@ void MinerPopulation::sort(std::string by) {
     else if (by=="av") {
         list.sort(&compareAViolation);
     }
+    else if (by=="pf")
+        list.sort(&compareProfit);
     else
         list.sort(&compareID);
 }
 
 void MinerPopulation::print() {
-    std::cout << "Hash:\t" << totalHashPower() << std::endl;
-    std::cout << "Size:\t" << size() << std::endl;
-    std::cout << "dVil:\t" << detectedViolationsCount << std::endl;
-    std::cout << "aVil:\t" << getAllViolationsCount() << std::endl;
+    std::cout << "Total Hash:        \t" << totalHashPower() << std::endl;
+    std::cout << "Miners Count:      \t" << size() << std::endl;
+    std::cout << "Total D-Vilolation:\t" << detectedViolationsCount << std::endl;
+    std::cout << "Total A-Vilolation:\t" << getAllViolationsCount() << std::endl;
     for (auto i=0; i<list.size(); i++)
         list[i]->print();
 }
@@ -272,7 +278,7 @@ void Pools::writePools(MinerPopulation & DB) {
         out << poolList[i]->MiningPool::poolName() << std::endl;
         out << poolList[i]->MiningPool::poolFee << std::endl;
         out << poolList[i]->TotalhashPower << std::endl;
-        out << poolList[i]->MiningPool::minedAmount << std::endl;
+        out << poolList[i]->MiningPool::grossIncome << std::endl;
         out << poolList[i]->size() << std::endl;
         for (auto j=0; j<poolList[i]->size(); j++) {
             out << poolList[i]->getMiner(j)->getIndex() << std::endl;
@@ -304,11 +310,12 @@ bool Pools::readPools (MinerPopulation & DB) {
         in >> newPM->MiningPool::poolName();
         in >> newPM->MiningPool::poolFee;
         in >> newPM->TotalhashPower;
-        in >> newPM->MiningPool::minedAmount;
+        in >> newPM->MiningPool::grossIncome;
         in >> sizeMiners;
         while (sizeMiners) {
             in >> index;
-            newPM->pickMiner(DB[index]);
+            newPM->pushBack(DB[index]);
+            DB[index]->savePoolManager(newPM);
             sizeMiners--;
         }
         poolList.push_back(newPM);
