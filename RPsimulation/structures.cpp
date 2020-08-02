@@ -37,19 +37,19 @@ bool compareAViolation(Miner* a, Miner* b) {
 }
 
 bool compareProfit(Miner* a, Miner* b) {
-    return (a->profit >= b->profit ? true : false);
+    return ((a->income + a->costs) >= (b->income + b->costs) ? true : false);
 }
 
 //----------------------------------------------------------------------------------
 
-MinerPopulation::MinerPopulation(int population, std::string file) {
+MinerPopulation::MinerPopulation(int population) {
     databaseInit();
-    this->file = file;
+    file = "Data/miners.db";
     readMinerPopulation();
     int x=0;
-    if (list.size() > DF)
+    if (list.size() > populationParameters.defaultMinersPopulation)
         return;
-    if (population!=DF)
+    if (population != populationParameters.defaultMinersPopulation)
         x = population;
     else
         x = gen.new_population();
@@ -106,17 +106,22 @@ void MinerPopulation::writeMinerPopulation () {
         out << list[i]->idValue << std::endl;
         out << list[i]->joinedTimestamp << std::endl;
         out << list[i]->miningPower << std::endl;
+        out << list[i]->m.name << std::endl;
+        out << list[i]->m.hashRate << std::endl;
+        out << list[i]->m.wattage << std::endl;
+        out << list[i]->powerCostPerHour.convert() << std::endl;
         out << list[i]->dishonestyFactor << std::endl;
-        out << list[i]->powerConRate << std::endl;
+        out << list[i]->powerConRate.convert() << std::endl;
         out << list[i]->mined << std::endl;
-        out << list[i]->profit << std::endl;
+        out << list[i]->income.convert() << std::endl;
+        out << list[i]->costs.convert() << std::endl;
         out << list[i]->reputation<< std::endl;
         out << list[i]->roundsPlayed << std::endl;
         out << list[i]->detectedViolations << std::endl;
         out << list[i]->allViolations << std::endl;
     }
     out.close();
-    std::cout << "The miner database have been saved." << std::endl << std::endl;
+    std::cout << "The miner database have been saved." << std::endl;
 }
 
 bool MinerPopulation::readMinerPopulation () {
@@ -140,10 +145,15 @@ bool MinerPopulation::readMinerPopulation () {
         in >> newItem->idValue;
         in >> newItem->joinedTimestamp;
         in >> newItem->miningPower;
+        in >> newItem->m.name;
+        in >> newItem->m.hashRate;
+        in >> newItem->m.wattage;
+        in >> newItem->powerCostPerHour;
         in >> newItem->dishonestyFactor;
         in >> newItem->powerConRate;
         in >> newItem->mined;
-        in >> newItem->profit;
+        in >> newItem->income;
+        in >> newItem->costs;
         in >> newItem->reputation;
         in >> newItem->roundsPlayed;
         in >> newItem->detectedViolations;
@@ -186,10 +196,11 @@ void MinerPopulation::sort(std::string by) {
 }
 
 void MinerPopulation::print() {
+    std::cout << "------------------------------------------\n";
     std::cout << "Total Hash:        \t" << totalHashPower() << std::endl;
     std::cout << "Miners Count:      \t" << size() << std::endl;
-    std::cout << "Total D-Vilolation:\t" << detectedViolationsCount << std::endl;
-    std::cout << "Total A-Vilolation:\t" << getAllViolationsCount() << std::endl;
+    //std::cout << "Total D-Vilolation:\t" << detectedViolationsCount << std::endl;
+    //std::cout << "Total A-Vilolation:\t" << getAllViolationsCount() << std::endl;
     for (auto i=0; i<list.size(); i++)
         list[i]->print();
 }
@@ -229,7 +240,7 @@ void MinerPopulation::saveOldOrder() {
 Pools::Pools(MinerPopulation & DB) {
     R = &DB;
     if (!readPools(*R)) {
-        makePools(DP);
+        makePools(populationParameters.defaultNumberOfPool);
     }
 }
 
@@ -273,19 +284,19 @@ void Pools::writePools(MinerPopulation & DB) {
         out << poolList[i]->firstName << std::endl;
         out << poolList[i]->lastName << std::endl;
         out << poolList[i]->idValue << std::endl;
-        out << poolList[i]->profit << std::endl;
+        out << poolList[i]->profit.convert() << std::endl;
         out << poolList[i]->mined << std::endl;
         out << poolList[i]->MiningPool::poolName() << std::endl;
         out << poolList[i]->MiningPool::poolFee << std::endl;
         out << poolList[i]->TotalhashPower << std::endl;
-        out << poolList[i]->MiningPool::grossIncome << std::endl;
+        out << poolList[i]->MiningPool::grossIncome.convert() << std::endl;
         out << poolList[i]->size() << std::endl;
         for (auto j=0; j<poolList[i]->size(); j++) {
             out << poolList[i]->getMiner(j)->getIndex() << std::endl;
         }
     }
     out.close();
-    std::cout << "The pool database have been saved." << std::endl << std::endl;
+    std::cout << "The pool database have been saved." << std::endl;
 }
 
 bool Pools::readPools (MinerPopulation & DB) {

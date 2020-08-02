@@ -3,9 +3,6 @@
 
 #include "BaseEntities.h"
 
-#define DF 46346        // Default/Ma*ximum Miner Population
-#define DP 24
-
 
 bool compareID(Miner* a, Miner* b);
 bool compareDfact(Miner* a, Miner* b);
@@ -35,7 +32,7 @@ private:
     void shuffleValueGen();
     void saveOldOrder();
 public:
-    MinerPopulation(int population=DF, std::string file="Data/miners.db");
+    MinerPopulation(int population);
     ~MinerPopulation();
     MinerPopulation(MinerPopulation &orig) = delete;
     unsigned int size();

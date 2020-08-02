@@ -1,5 +1,39 @@
 #include "BaseEntities.h"
 
+
+MinerMachines::MinerMachines() {
+    machineFile = "Source/minerMachines.db";
+    readFile();
+}
+
+bool MinerMachines::readFile() {
+    std::ifstream in;
+    in.open(machineFile);
+    if (in.fail())
+    {
+        std::cout << "The machine database file did not open." << std::endl;
+        exit(1);
+    }
+    int size = 0;
+    in >> size;
+    for (int i=0; i<size; i++) {
+        struct machine m;
+        in >> m.name;
+        in >> m.hashRate;
+        in >> m.wattage;
+        mList.push_back(m);
+    }
+    in.close();
+    return true;
+}
+
+struct machine MinerMachines::randomPick() {
+    int index = gen.select_random_index(0, int(mList.size()-1));
+    return mList[index];
+}
+
+//----------------------------------------------------------------------------------
+
 Miner::Miner(std::string option) {
     initialize();
     if (option=="blank")
@@ -47,16 +81,16 @@ double Miner::getReputation() {
     return reputation;
 }
 
-double Miner::getProfit() {
-    return profit;
-}
-
 bool Miner::isTaken() {
     return taken;
 }
 
 int Miner::getMined() {
     return mined;
+}
+
+Money Miner::getPowerCostPerHour() {
+    return powerCostPerHour;
 }
 
 bool Miner::miningIsEnded() {
@@ -85,7 +119,8 @@ void Miner::initialize() {
     reputation = 0;
     detectedViolations = 0;
     allViolations = 0;
-    profit = 0;
+    costs = 0;
+    income = 0;
     miningPower = 0;
     dishonestyFactor = 0;
     roundsPlayed = 0;
@@ -103,14 +138,21 @@ void Miner::generateInitialValues() {
     miningPower = gen.minig_power();
     dishonestyFactor = gen.dishonestyFactor();
     powerConRate = gen.miningPowerConsumption();
+    m = machines.randomPick();
+    powerCostCalculator();
 }
 
-void Miner::receiveRewards(double amount) {
-    profit += amount;
+void Miner::powerCostCalculator() {
+    double x = (double(miningPower)*double(m.wattage)/double(m.hashRate)) / 1000;
+    powerCostPerHour = powerConRate * x;
 }
 
-void Miner::reduceCost(double amount) {
-    profit -= amount;
+void Miner::receiveRewards(Money amount) {
+    income += amount;
+}
+
+void Miner::addCost(Money amount) {
+    costs -= amount;
 }
 
 void Miner::print() {
@@ -118,19 +160,23 @@ void Miner::print() {
     std::cout << "Name:    \t\t" << firstName << " " << lastName << std::endl;
     std::cout << "ID:      \t\t" << idValue << std::endl;
     std::cout << "Jonied:  \t\t" << std::asctime(std::localtime(&joinedTimestamp));
-    std::cout << "Hash Rate:\t\t" << miningPower << std::endl;
-    std::cout << "DH Factor:\t\t" << dishonestyFactor << std::endl;
-    std::cout << "Power Rate:\t\t" << powerConRate << std::endl;
+    std::cout << "Hash Rate:\t\t" << miningPower << " TH/S" << std::endl;
+    //std::cout << "DH Factor:\t\t" << dishonestyFactor << std::endl;
+    std::cout << "Power Rate:\t\t" << powerConRate << " per KW" << std::endl;
+    std::cout << "Power Cost:\t\t" << powerCostPerHour << " per Hour" << std::endl;
     if (pool!=NULL)
         std::cout << "Pool Name:\t\t" << pool->poolName() << std::endl;
     else
         std::cout << "Pool Name:\t" << " " << std::endl;
     std::cout << "Mined Count:\t" << mined << std::endl;
+    std::cout << "Income:    \t\t" << income << std::endl;
+    std::cout << "Costs:     \t\t" << costs << std::endl;
+    Money profit = income + costs;
     std::cout << "Net Profit:\t\t" << profit << std::endl;
     std::cout <<  "Reputation:\t\t" << reputation << std::endl;
     std::cout << "Play Count:\t\t" << roundsPlayed << std::endl;
-    std::cout << "D Violation:\t" << detectedViolations << std::endl;
-    std::cout << "A Violation:\t" << allViolations << std::endl;
+    //std::cout << "D Violation:\t" << detectedViolations << std::endl;
+    //std::cout << "A Violation:\t" << allViolations << std::endl;
     std::cout << "------------------------------------------\n";
 }
 
@@ -160,9 +206,10 @@ std::string& MiningPool::poolName() {
 }
 
 
-void MiningPool::distributeMinersReward(double amount) {
+void MiningPool::distributeMinersReward(Money amount) {
     for (int i=0; i<miners.size(); i++) {
-        double minersShare = (double(miners[i]->getMiningPower())/double(TotalhashPower))*amount;
+        Money minersShare;
+        minersShare = amount * (double(miners[i]->getMiningPower())/double(TotalhashPower));
         miners[i]->receiveRewards(minersShare);
     }
 }
@@ -251,7 +298,7 @@ double PoolManager::poolFee() {
     return MiningPool::poolFee;
 }
 
-double PoolManager::poolRewards() {
+Money PoolManager::poolRewards() {
     return MiningPool::grossIncome;
 }
 
@@ -259,13 +306,15 @@ int PoolManager::getMined() {
     return mined;
 }
 
-double PoolManager::getProfit() {
+Money PoolManager::getProfit() {
     return profit;
 }
 
-void PoolManager::receiveReward(double amount) {
+void PoolManager::receiveReward(Money amount) {
     grossIncome += amount;
-    profit += amount*(MiningPool::poolFee/100);
+    Money newProfit;
+    newProfit = amount*MiningPool::poolFee;
+    profit += newProfit;
     amount -= profit;
     mined++;
     MiningPool::distributeMinersReward(amount);
@@ -301,3 +350,4 @@ void PoolManager::print() {
 }
 
 //----------------------------------------------------------------------------------
+

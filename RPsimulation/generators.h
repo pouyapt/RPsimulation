@@ -9,6 +9,7 @@ static std::random_device ran;
 
 class random {
 private:
+    EntityParameters entityParameters;
     std::string set1[27] = {
         "b","c","d","f","g","h","j","k","l","m","n","p","q","r","s","t","v","w","x","y","z","ch","sh","kh","gh","zh","ph"
     };
@@ -143,20 +144,20 @@ public:
     }
     auto minig_power() {
         std::mt19937 gen{ran()};
-        std::normal_distribution<> d(123, 8476);
-        std::uniform_int_distribution<> u(51, 195);
+        std::normal_distribution<> d(entityParameters.getMiningPowerPars("mean"), entityParameters.getMiningPowerPars("std"));
+        std::uniform_int_distribution<> u(entityParameters.getMiningPowerPars("mean")-entityParameters.getMiningPowerPars("range"), entityParameters.getMiningPowerPars("mean")+entityParameters.getMiningPowerPars("range"));
         int a = d(gen);
-        if (a<=3)
+        if (a<=entityParameters.getMiningPowerPars("min"))
             a = u(gen);
         return a;
     }
     auto dishonestyFactor() {
         std::mt19937 gen{ran()};
-        std::normal_distribution<float> d(0, 10);
+        std::normal_distribution<float> d(entityParameters.getDishonestyFactorPars("mean"), entityParameters.getDishonestyFactorPars("std"));
         float a = 0;
         do
             a = d(gen);
-        while (a<0.001);
+        while (a<entityParameters.getDishonestyFactorPars("min"));
         return a/100;
     }
     std::string mining_pool_name() {
@@ -174,11 +175,11 @@ public:
     }
     auto new_population() {
         std::mt19937 gen{ran()};
-        std::normal_distribution<> d(131, 86);
+        std::normal_distribution<> d(entityParameters.getMinersPopulationGrowthPars("mean"), entityParameters.getMinersPopulationGrowthPars("std"));
         int a=0;
         do
             a = d(gen);
-        while (a<0);
+        while (a<entityParameters.getMinersPopulationGrowthPars("min"));
         return a;
     }
     int select_random_index(int min, int max) {
@@ -213,18 +214,18 @@ public:
     }
     auto miningPowerConsumption() {
         std::mt19937 gen{ran()};
-        std::normal_distribution<float> d(0.05, 0.02);
+        std::normal_distribution<float> d(entityParameters.getPowerConsumptionPars("mean"), entityParameters.getPowerConsumptionPars("std"));
         double a = 0;
         do
             a = d(gen);
-        while (a<0.01 || a>=0.075);
+        while (a<entityParameters.getPowerConsumptionPars("min") || a>=entityParameters.getPowerConsumptionPars("max"));
         return a;
     }
     auto poolFee() {
         std::mt19937 gen{ran()};
-        std::uniform_int_distribution<> d(14, 23);
+        std::uniform_int_distribution<> d(entityParameters.getPoolFeesPars("min"), entityParameters.getPoolFeesPars("max"));
         float a = d(gen);
-        return a/10;
+        return a/1000;
     }
 };
 

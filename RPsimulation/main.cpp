@@ -1,24 +1,23 @@
 #include "game.h"
 
 void minerAndPools(MinerPopulation &DB, Pools &P) {
-    for (int i=0; i<P.size(); i++) {
-        int n = 265;
-        while (n) {
+    int n = 1251;
+    while (n) {
+        for (int i=0; i<P.size(); i++)
             P[i]->pickMiner(DB[rand()]);
-            n--;
-        }
+        n--;
     }
 }
 
-
 int main() {
-    MinerPopulation DB(0);
+    
+    MinerPopulation DB(25300);
     Pools P(DB);
-    //minerAndPools(DB, P);
-    for (int i=0; i<0; i++) {
-        mineGame(DB);
-    }
-    //DB.sort("pf");
-    P.print();
+    minerAndPools(DB, P);
+    Game G(DB);
+    G.mine(850);
+    DB.sort("pf");
+    DB.print();
+    
 }
 

@@ -2,10 +2,25 @@
 #define BaseEntities_h
 
 #include "generators.h"
-#include "listDS.h"
 
-class PoolManager;
-class MinerPopulation;
+
+struct machine {
+    std::string name;
+    double hashRate;
+    int wattage;
+};
+
+static class MinerMachines {
+private:
+    core::list<machine> mList;
+    std::string machineFile;
+    bool readFile();
+public:
+    MinerMachines();
+    machine randomPick();
+} machines;
+
+//----------------------------------------------------------------------------------
 
 class Miner {
 private:
@@ -18,7 +33,9 @@ private:
     int dMiningPower;
     int detectedViolations;
     int allViolations;
-    double profit;
+    Money powerCostPerHour;
+    Money costs;
+    Money income;
     int roundsPlayed;
     double dishonestyFactor;
     bool taken;
@@ -27,14 +44,15 @@ private:
     int index;
     int oldIndex;
     bool endMining;
-    double powerConRate;
+    Money powerConRate;
+    struct machine m;
     void initialize();
     void generateInitialValues();
+    void powerCostCalculator();
     PoolManager* pool;
 public:
     friend class MinerPopulation;
-    friend void mineGame(MinerPopulation & DB);
-    friend void updateMinersPowerCost(MinerPopulation & DB);
+    friend class Game;
     friend bool compareID(Miner* a, Miner* b);
     friend bool compareDfact(Miner* a, Miner* b);
     friend bool compareMiningPower(Miner* a, Miner* b);
@@ -53,17 +71,18 @@ public:
     long getJoinedTimestamp();
     double getReputation();
     int getMiningPower(std::string mode="real");
+    Money getPowerCostPerHour();
     int getDetectedViolations();
     int roundPlayed();
-    double getProfit();
+    Money getProfit();
     bool isTaken();
     int getMined();
     bool miningIsEnded();
     int getIndex();
     void savePoolManager(PoolManager* poolManager);
     void removePoolManager(PoolManager* poolManager);
-    void receiveRewards(double amount);
-    void reduceCost(double amount);
+    void receiveRewards(Money amount);
+    void addCost(Money amount);
     void print();
 };
 
@@ -77,12 +96,12 @@ private:
 protected:
     unsigned int TotalhashPower;
     double poolFee;
-    long double grossIncome;
+    Money grossIncome;
     MiningPool();
     MiningPool operator=(const MiningPool & orig) = delete;
     unsigned size();
     std::string& poolName();
-    void distributeMinersReward(double amount);
+    void distributeMinersReward(Money amount);
     void addMiner(Miner* miner);
     bool removeMiner(Miner* miner);
     bool minerIsMember(Miner* miner);
@@ -97,7 +116,7 @@ private:
     std::string firstName;
     std::string lastName;
     unsigned idValue;
-    double profit;
+    Money profit;
     int mined;
     void initialize();
     void generate();
@@ -108,22 +127,23 @@ public:
     void print();
     unsigned size();
     int getMined();
-    double getProfit();
+    Money getProfit();
     std::string getFirstName();
     std::string getLastName();
     unsigned getID();
     std::string poolName();
     unsigned int poolHashPower();
     double poolFee();
-    double poolRewards();
+    Money poolRewards();
     Miner* getMiner(unsigned index);
-    void receiveReward(double amount);
+    void receiveReward(Money amount);
     bool pickMiner(Miner* miner);
     bool releaseMiner(Miner* miner);
     friend class Pools;
 };
 
 //--------------------------------------------------------------------------------
+
 
 #endif
 
