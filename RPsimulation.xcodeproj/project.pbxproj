@@ -9,9 +9,11 @@
 /* Begin PBXBuildFile section */
 		921F5D4224C3B21D00970137 /* structures.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 921F5D4024C3B21D00970137 /* structures.cpp */; };
 		925F2E122453BD3F000FA1DF /* BaseEntities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 925F2E112453BD3F000FA1DF /* BaseEntities.cpp */; };
-		928CC37324B4EC60000788F9 /* game.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 928CC37124B4EC60000788F9 /* game.cpp */; };
+		9279C8D024D8BF39007197D4 /* parameters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9279C8CE24D8BF39007197D4 /* parameters.cpp */; };
+		928CC37324B4EC60000788F9 /* interactions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 928CC37124B4EC60000788F9 /* interactions.cpp */; };
 		92BB30352447BAF2006EDB1E /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 92BB30342447BAF2006EDB1E /* main.cpp */; };
-		92BC1A0B24B2A498005E84CE /* foundation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 92BC1A0924B2A498005E84CE /* foundation.cpp */; };
+		92BC1A0B24B2A498005E84CE /* BaseUnits.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 92BC1A0924B2A498005E84CE /* BaseUnits.cpp */; };
+		92F9EDA324E99402009ED6D9 /* foundation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 92F9EDA124E99402009ED6D9 /* foundation.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -29,16 +31,21 @@
 /* Begin PBXFileReference section */
 		921F5D4024C3B21D00970137 /* structures.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = structures.cpp; sourceTree = "<group>"; };
 		921F5D4124C3B21D00970137 /* structures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = structures.h; sourceTree = "<group>"; };
+		9254D44824F1B00A00F1D963 /* MinerMachines.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = MinerMachines.rtf; sourceTree = "<group>"; };
 		925F2E112453BD3F000FA1DF /* BaseEntities.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = BaseEntities.cpp; sourceTree = "<group>"; };
-		928CC37124B4EC60000788F9 /* game.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = game.cpp; sourceTree = "<group>"; };
-		928CC37224B4EC60000788F9 /* game.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = game.h; sourceTree = "<group>"; };
+		9279C8CE24D8BF39007197D4 /* parameters.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = parameters.cpp; sourceTree = "<group>"; };
+		9279C8CF24D8BF39007197D4 /* parameters.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parameters.h; sourceTree = "<group>"; };
+		928CC37124B4EC60000788F9 /* interactions.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = interactions.cpp; sourceTree = "<group>"; };
+		928CC37224B4EC60000788F9 /* interactions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = interactions.h; sourceTree = "<group>"; };
 		92ADCBFD2448E3A700BC2F59 /* listDS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = listDS.h; sourceTree = "<group>"; };
 		92ADCC002448EF6C00BC2F59 /* generators.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = generators.h; sourceTree = "<group>"; };
 		92BB30312447BAF2006EDB1E /* RPsimulation */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = RPsimulation; sourceTree = BUILT_PRODUCTS_DIR; };
 		92BB30342447BAF2006EDB1E /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		92BB303B2447BB3E006EDB1E /* BaseEntities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BaseEntities.h; sourceTree = "<group>"; };
-		92BC1A0824B2A46A005E84CE /* foundation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = foundation.h; sourceTree = "<group>"; };
-		92BC1A0924B2A498005E84CE /* foundation.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = foundation.cpp; sourceTree = "<group>"; };
+		92BC1A0824B2A46A005E84CE /* BaseUnits.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BaseUnits.h; sourceTree = "<group>"; };
+		92BC1A0924B2A498005E84CE /* BaseUnits.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = BaseUnits.cpp; sourceTree = "<group>"; };
+		92F9EDA124E99402009ED6D9 /* foundation.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = foundation.cpp; sourceTree = "<group>"; };
+		92F9EDA224E99402009ED6D9 /* foundation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = foundation.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -71,16 +78,21 @@
 		92BB30332447BAF2006EDB1E /* RPsimulation */ = {
 			isa = PBXGroup;
 			children = (
+				9254D44824F1B00A00F1D963 /* MinerMachines.rtf */,
+				92F9EDA224E99402009ED6D9 /* foundation.h */,
+				92F9EDA124E99402009ED6D9 /* foundation.cpp */,
+				9279C8CF24D8BF39007197D4 /* parameters.h */,
+				9279C8CE24D8BF39007197D4 /* parameters.cpp */,
 				92ADCBFD2448E3A700BC2F59 /* listDS.h */,
-				92BC1A0824B2A46A005E84CE /* foundation.h */,
-				92BC1A0924B2A498005E84CE /* foundation.cpp */,
+				92BC1A0824B2A46A005E84CE /* BaseUnits.h */,
+				92BC1A0924B2A498005E84CE /* BaseUnits.cpp */,
 				92ADCC002448EF6C00BC2F59 /* generators.h */,
 				92BB303B2447BB3E006EDB1E /* BaseEntities.h */,
 				925F2E112453BD3F000FA1DF /* BaseEntities.cpp */,
 				921F5D4124C3B21D00970137 /* structures.h */,
 				921F5D4024C3B21D00970137 /* structures.cpp */,
-				928CC37224B4EC60000788F9 /* game.h */,
-				928CC37124B4EC60000788F9 /* game.cpp */,
+				928CC37224B4EC60000788F9 /* interactions.h */,
+				928CC37124B4EC60000788F9 /* interactions.cpp */,
 				92BB30342447BAF2006EDB1E /* main.cpp */,
 			);
 			path = RPsimulation;
@@ -146,8 +158,10 @@
 				92BB30352447BAF2006EDB1E /* main.cpp in Sources */,
 				925F2E122453BD3F000FA1DF /* BaseEntities.cpp in Sources */,
 				921F5D4224C3B21D00970137 /* structures.cpp in Sources */,
-				92BC1A0B24B2A498005E84CE /* foundation.cpp in Sources */,
-				928CC37324B4EC60000788F9 /* game.cpp in Sources */,
+				92BC1A0B24B2A498005E84CE /* BaseUnits.cpp in Sources */,
+				928CC37324B4EC60000788F9 /* interactions.cpp in Sources */,
+				92F9EDA324E99402009ED6D9 /* foundation.cpp in Sources */,
+				9279C8D024D8BF39007197D4 /* parameters.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

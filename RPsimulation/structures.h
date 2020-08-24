@@ -21,7 +21,7 @@ class MinerPopulation {
 private:
     core::list<Miner*> list;
     core::list<Miner*> list_inactive;
-    unsigned int totalHashPower_;
+    long totalHashPower_;
     int allViolationsCount = 0;
     int detectedViolationsCount = 0;
     std::string file;
@@ -31,14 +31,23 @@ private:
     void deleteMiner(unsigned index);
     void shuffleValueGen();
     void saveOldOrder();
-public:
+    void updateVariableParameters();
+    PopulationParameters* populationP = &PopulationParameters::instance();
+    core::Random* gen = &core::Random::instance();
+    VariableParameters* variableP = &VariableParameters::instance();
     MinerPopulation(int population);
     ~MinerPopulation();
+public:
+    static MinerPopulation& instance(int population) {
+        static MinerPopulation instance(population);
+        return instance;
+    }
     MinerPopulation(MinerPopulation &orig) = delete;
     unsigned int size();
     void updateList();
     Miner* operator [] (unsigned index);
-    unsigned totalHashPower();
+    MinerPopulation operator=(MinerPopulation &orig) = delete;
+    long totalHashPower();
     int getAllViolationsCount();
     int& getDetectedViolationsCount();
     void saveIndex();
@@ -50,21 +59,35 @@ public:
 
 class Pools {
 private:
+    Pools();
+    ~Pools();
     core::list<PoolManager*> poolList;
-    MinerPopulation* R;
+    MinerPopulation* MP = &MinerPopulation::instance(0);
     PoolManager* getPool (unsigned index);
+    PopulationParameters* populationP = &PopulationParameters::instance();
     void makePools(int number);
     std::string poolFile = "Data/pools.db";
     bool readPools (MinerPopulation & DB);
     void writePools (MinerPopulation & DB);
 public:
-    Pools(MinerPopulation & DB);
+    static Pools& instance() {
+        static Pools instance;
+        return instance;
+    }
     Pools(Pools &orig) = delete;
     PoolManager* operator [] (unsigned index);
-    ~Pools();
     unsigned int size();
     void print();
     
+};
+
+//--------------------------------------------------------------------------------
+
+class Blockchain {
+private:
+    Blockchain();
+    ~Blockchain();
+    Blockchain(const Blockchain& orig) = delete;
 };
 
 //--------------------------------------------------------------------------------

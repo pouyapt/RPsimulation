@@ -1,15 +1,21 @@
 #ifndef generators_h
 #define generators_h
 
-#include "foundation.h"
+#include "BaseUnits.h"
 
 namespace core {
 
-static std::random_device ran;
-
-class random {
+class Random {
+public:
+    static Random& instance() {
+        static Random instance;
+        return instance;
+    }
 private:
-    EntityParameters entityParameters;
+    Random() {}
+    std::random_device ran;
+    EntityParameters* entityP = &EntityParameters::instance();
+    MiningParameters* miningP = &MiningParameters::instance();
     std::string set1[27] = {
         "b","c","d","f","g","h","j","k","l","m","n","p","q","r","s","t","v","w","x","y","z","ch","sh","kh","gh","zh","ph"
     };
@@ -122,9 +128,9 @@ private:
         }
     }
 public:
-    unsigned int id_number(unsigned int lowBound, unsigned int highBound) {
+    long id_number(long lowBound, long highBound) {
         std::mt19937 eng(ran());
-        std::uniform_int_distribution<unsigned int> distr(lowBound, highBound);
+        std::uniform_int_distribution<long> distr(lowBound, highBound);
         return distr(eng);
     }
     auto name() {
@@ -144,20 +150,20 @@ public:
     }
     auto minig_power() {
         std::mt19937 gen{ran()};
-        std::normal_distribution<> d(entityParameters.getMiningPowerPars("mean"), entityParameters.getMiningPowerPars("std"));
-        std::uniform_int_distribution<> u(entityParameters.getMiningPowerPars("mean")-entityParameters.getMiningPowerPars("range"), entityParameters.getMiningPowerPars("mean")+entityParameters.getMiningPowerPars("range"));
+        std::normal_distribution<> d(entityP->getMiningPowerPars("mean"), entityP->getMiningPowerPars("std"));
+        std::uniform_int_distribution<> u(entityP->getMiningPowerPars("mean")-entityP->getMiningPowerPars("range"), entityP->getMiningPowerPars("mean")+entityP->getMiningPowerPars("range"));
         int a = d(gen);
-        if (a<=entityParameters.getMiningPowerPars("min"))
+        if (a<=entityP->getMiningPowerPars("min"))
             a = u(gen);
         return a;
     }
     auto dishonestyFactor() {
         std::mt19937 gen{ran()};
-        std::normal_distribution<float> d(entityParameters.getDishonestyFactorPars("mean"), entityParameters.getDishonestyFactorPars("std"));
+        std::normal_distribution<float> d(entityP->getDishonestyFactorPars("mean"), entityP->getDishonestyFactorPars("std"));
         float a = 0;
         do
             a = d(gen);
-        while (a<entityParameters.getDishonestyFactorPars("min"));
+        while (a < entityP->getDishonestyFactorPars("min"));
         return a/100;
     }
     std::string mining_pool_name() {
@@ -175,23 +181,23 @@ public:
     }
     auto new_population() {
         std::mt19937 gen{ran()};
-        std::normal_distribution<> d(entityParameters.getMinersPopulationGrowthPars("mean"), entityParameters.getMinersPopulationGrowthPars("std"));
+        std::normal_distribution<> d(entityP->getMinersPopulationGrowthPars("mean"), entityP->getMinersPopulationGrowthPars("std"));
         int a=0;
         do
             a = d(gen);
-        while (a<entityParameters.getMinersPopulationGrowthPars("min"));
+        while (a<entityP->getMinersPopulationGrowthPars("min"));
         return a;
     }
-    int select_random_index(int min, int max) {
+    unsigned select_random_index(unsigned min, unsigned max) {
         std::mt19937 gen{ran()};
         std::uniform_int_distribution<> d(min, max);
         int a = d(gen);
         return a;
     }
-    unsigned int random_hash(unsigned int min, unsigned int max) {
+    long random_hash(long min, long max) {
         std::mt19937 gen{ran()};
-        std::uniform_int_distribution<> d(min, max);
-        unsigned int a = d(gen);
+        std::uniform_int_distribution<long> d(min, max);
+        long a = d(gen);
         return a;
     }
     auto dishonestyThreshold() {
@@ -214,23 +220,66 @@ public:
     }
     auto miningPowerConsumption() {
         std::mt19937 gen{ran()};
-        std::normal_distribution<float> d(entityParameters.getPowerConsumptionPars("mean"), entityParameters.getPowerConsumptionPars("std"));
+        std::normal_distribution<float> d(entityP->getPowerConsumptionPars("mean"), entityP->getPowerConsumptionPars("std"));
         double a = 0;
         do
             a = d(gen);
-        while (a<entityParameters.getPowerConsumptionPars("min") || a>=entityParameters.getPowerConsumptionPars("max"));
+        while (a<entityP->getPowerConsumptionPars("min") || a>=entityP->getPowerConsumptionPars("max"));
         return a;
     }
     auto poolFee() {
         std::mt19937 gen{ran()};
-        std::uniform_int_distribution<> d(entityParameters.getPoolFeesPars("min"), entityParameters.getPoolFeesPars("max"));
+        std::uniform_int_distribution<> d(entityP->getPoolFeesPars("min"), entityP->getPoolFeesPars("max"));
         float a = d(gen);
         return a/1000;
+    }
+    auto minig_time() {
+        std::mt19937 gen{ran()};
+        std::normal_distribution<> d(miningP->getMiningTime("mean"), miningP->getMiningTime("std"));
+        int a;
+        do
+            a = d(gen);
+        while (a<5);
+        return a;
+    }
+    auto powReward() {
+    std::mt19937 gen{ran()};
+    std::normal_distribution<float> d(entityP->getPOWreward("mean"), entityP->getPOWreward("std"));
+    double a = 0;
+    do
+        a = d(gen);
+    while (a<entityP->getPOWreward("min") || a>=entityP->getPOWreward("max"));
+    return a;
+    }
+    auto poolSize() {
+        std::mt19937 gen{ran()};
+        std::normal_distribution<float> d(entityP->getPoolSize("mean"), entityP->getPoolSize("std"));
+        double a = 0;
+        do
+            a = d(gen);
+        while (a<entityP->getPoolSize("min") || a>=entityP->getPoolSize("max"));
+        return a;
+    }
+    double probabilityConfidence() {
+        std::mt19937 gen{ran()};
+        std::normal_distribution<float> d(entityP->getProbabilityConfidence("mean"), entityP->getProbabilityConfidence("std"));
+        double a = 0;
+        do
+            a = d(gen);
+        while (a<entityP->getProbabilityConfidence("min") || a>=entityP->getProbabilityConfidence("max"));
+        return a;
+    }
+    Money lossTolerance(Money investment) {
+        std::mt19937 gen{ran()};
+        
+        std::uniform_int_distribution<> d(entityP->lossToleranceFactor("min")*100, entityP->lossToleranceFactor("max")*100);
+        double a = double(d(gen))/(-100);
+        Money lossT;
+        lossT = investment * a;
+        return lossT;
     }
 };
 
 }
-
-static core::random gen;
 
 #endif /* generators_h */

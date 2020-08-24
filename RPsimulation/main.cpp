@@ -1,7 +1,7 @@
-#include "game.h"
+#include "interactions.h"
 
-void minerAndPools(MinerPopulation &DB, Pools &P) {
-    int n = 1251;
+void minerAndPoolsTest(MinerPopulation &DB, Pools &P) {
+    int n = 1951;
     while (n) {
         for (int i=0; i<P.size(); i++)
             P[i]->pickMiner(DB[rand()]);
@@ -9,15 +9,9 @@ void minerAndPools(MinerPopulation &DB, Pools &P) {
     }
 }
 
+
 int main() {
-    
-    MinerPopulation DB(25300);
-    Pools P(DB);
-    minerAndPools(DB, P);
-    Game G(DB);
-    G.mine(850);
-    DB.sort("pf");
-    DB.print();
-    
+    MinerPopulation* P = &MinerPopulation::instance(0);
+    P->print();
 }
 

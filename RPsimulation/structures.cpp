@@ -37,7 +37,7 @@ bool compareAViolation(Miner* a, Miner* b) {
 }
 
 bool compareProfit(Miner* a, Miner* b) {
-    return ((a->income + a->costs) >= (b->income + b->costs) ? true : false);
+    return ((a->poolIncome + a->powIncome + a->costs) >= (b->poolIncome + b->powIncome+  b->costs) ? true : false);
 }
 
 //----------------------------------------------------------------------------------
@@ -46,13 +46,14 @@ MinerPopulation::MinerPopulation(int population) {
     databaseInit();
     file = "Data/miners.db";
     readMinerPopulation();
+    updateVariableParameters();
     int x=0;
-    if (list.size() > populationParameters.defaultMinersPopulation)
+    if (list.size() > populationP->defaultMinersPopulation)
         return;
-    if (population != populationParameters.defaultMinersPopulation)
+    if (population != populationP->defaultMinersPopulation)
         x = population;
     else
-        x = gen.new_population();
+        x = gen->new_population();
     for (int i=0; i<x; i++)
        addMiner();
 }
@@ -76,7 +77,7 @@ void MinerPopulation::updateList() {
     
 }
 
-unsigned MinerPopulation::totalHashPower() {
+long MinerPopulation::totalHashPower() {
     return totalHashPower_;
 }
 
@@ -92,6 +93,10 @@ int& MinerPopulation::getDetectedViolationsCount() {
     return detectedViolationsCount;
 }
 
+void MinerPopulation::updateVariableParameters() {
+    variableP->currentMinersPopulation = list.size();
+    variableP->currentTotalHashPower = totalHashPower_;
+}
 
 void MinerPopulation::writeMinerPopulation () {
     std::ofstream out;
@@ -113,12 +118,17 @@ void MinerPopulation::writeMinerPopulation () {
         out << list[i]->dishonestyFactor << std::endl;
         out << list[i]->powerConRate.convert() << std::endl;
         out << list[i]->mined << std::endl;
-        out << list[i]->income.convert() << std::endl;
+        out << list[i]->minedTime.convertToNumber() << std::endl;
+        out << list[i]->poolIncome.convert() << std::endl;
+        out << list[i]->powIncome.convert() << std::endl;
         out << list[i]->costs.convert() << std::endl;
         out << list[i]->reputation<< std::endl;
         out << list[i]->roundsPlayed << std::endl;
         out << list[i]->detectedViolations << std::endl;
         out << list[i]->allViolations << std::endl;
+        out << list[i]->probabilityConfidence << std::endl;
+        out << list[i]->investment.convert() << std::endl;
+        out << list[i]->lossTolerance.convert() << std::endl;
     }
     out.close();
     std::cout << "The miner database have been saved." << std::endl;
@@ -127,8 +137,7 @@ void MinerPopulation::writeMinerPopulation () {
 bool MinerPopulation::readMinerPopulation () {
     std::ifstream in;
     in.open(file);
-    if (in.fail())
-    {
+    if (in.fail()) {
         std::cout << "The miner database file did not open." << std::endl;
         return false;
     }
@@ -137,8 +146,7 @@ bool MinerPopulation::readMinerPopulation () {
     in >> totalHashPower_;
     in >> allViolationsCount;
     in >> detectedViolationsCount;
-    while (size)
-    {
+    while (size) {
         Miner* newItem = new Miner("blank");
         in >> newItem->firstName;
         in >> newItem->lastName;
@@ -152,12 +160,17 @@ bool MinerPopulation::readMinerPopulation () {
         in >> newItem->dishonestyFactor;
         in >> newItem->powerConRate;
         in >> newItem->mined;
-        in >> newItem->income;
+        in >> newItem->minedTime;
+        in >> newItem->poolIncome;
+        in >> newItem->powIncome;
         in >> newItem->costs;
         in >> newItem->reputation;
         in >> newItem->roundsPlayed;
         in >> newItem->detectedViolations;
         in >> newItem->allViolations;
+        in >> newItem->probabilityConfidence;
+        in >> newItem->investment;
+        in >> newItem-> lossTolerance;
         list.push_back(newItem);
         size--;
     }
@@ -210,16 +223,18 @@ void MinerPopulation::addMiner() {
     list.push_back(newMiner);
     newMiner->index = unsigned(list.size());
     totalHashPower_ += newMiner->getMiningPower();
+    updateVariableParameters();
 }
 
 void MinerPopulation::deleteMiner(unsigned index) {
     totalHashPower_ -= list[index]->getMiningPower();
     list.pop(index);
+    updateVariableParameters();
 }
 
 void MinerPopulation::shuffleValueGen() {
-    for (unsigned i=0; i<list.size(); i++) {
-        list[i]->shuffleValue = gen.random_hash(INT_MIN, INT_MAX);
+    for (long i=0; i<list.size(); i++) {
+        list[i]->shuffleValue = gen->random_hash(INT_MIN, INT_MAX);
     }
 }
 
@@ -237,15 +252,14 @@ void MinerPopulation::saveOldOrder() {
 
 //----------------------------------------------------------------------------------
 
-Pools::Pools(MinerPopulation & DB) {
-    R = &DB;
-    if (!readPools(*R)) {
-        makePools(populationParameters.defaultNumberOfPool);
+Pools::Pools() {
+    if (!readPools(*MP)) {
+        makePools(populationP->defaultNumberOfPool);
     }
 }
 
 Pools::~Pools() {
-    writePools(*R);
+    writePools(*MP);
     for (int i=0; i<poolList.size(); i++)
         delete poolList[i];
 }
