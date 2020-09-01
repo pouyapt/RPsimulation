@@ -4,29 +4,24 @@
 #include "BaseEntities.h"
 
 
-bool compareID(Miner* a, Miner* b);
-bool compareDfact(Miner* a, Miner* b);
-bool compareMiningPower(Miner* a, Miner* b);
-bool compareJoinDate(Miner* a, Miner* b);
-bool compareMined(Miner* a, Miner* b);
-bool compareShuffleValue(Miner* a, Miner* b);
-bool compareOldIndex(Miner* a, Miner* b);
-bool compareDViolation(Miner* a, Miner* b);
-bool compareAViolation(Miner* a, Miner* b);
-bool compareProfit(Miner* a, Miner* b);
-
-//--------------------------------------------------------------------------------
-
 class MinerPopulation {
 private:
+    MinerPopulation(int population);
+    ~MinerPopulation();
     core::list<Miner*> list;
     core::list<Miner*> list_inactive;
     long totalHashPower_;
     int allViolationsCount = 0;
     int detectedViolationsCount = 0;
     std::string file;
-    void writeMinerPopulation ();
-    bool readMinerPopulation ();
+    std::string file_inactive;
+    int soloMiners = 0;
+    void writeMinersAttr(core::list<Miner*> &L, std::ofstream &out);
+    void readMinersAttr(core::list<Miner*> &L, std::ifstream &in);
+    void writeMinerPopulation();
+    bool readMinerPopulation();
+    void writeMinerPopulation_inactive();
+    bool readMinerPopulation_inactive();
     void addMiner();
     void deleteMiner(unsigned index);
     void shuffleValueGen();
@@ -35,10 +30,10 @@ private:
     PopulationParameters* populationP = &PopulationParameters::instance();
     core::Random* gen = &core::Random::instance();
     VariableParameters* variableP = &VariableParameters::instance();
-    MinerPopulation(int population);
-    ~MinerPopulation();
+    int removeLostMiners();
+    void removeLosingMinersFromPools();
 public:
-    static MinerPopulation& instance(int population) {
+    static MinerPopulation& instance(int population=INT_MIN) {
         static MinerPopulation instance(population);
         return instance;
     }
@@ -52,7 +47,16 @@ public:
     int& getDetectedViolationsCount();
     void saveIndex();
     void sort(std::string by="");
-    void print();
+    void shuffleList();
+    void undoShuffleList();
+    void printActiveMiners();
+    void printInactiveMiners();
+    void printPopulationStat();
+    void writeMinersInvitations(Pools* P);
+    void readMinersInvitations(Pools* P);
+    int topHashPower();
+    int MinersWithAtLeastOneBlock();
+    int MinersWithProfit();
 };
 
 //--------------------------------------------------------------------------------
@@ -63,12 +67,14 @@ private:
     ~Pools();
     core::list<PoolManager*> poolList;
     MinerPopulation* MP = &MinerPopulation::instance(0);
-    PoolManager* getPool (unsigned index);
     PopulationParameters* populationP = &PopulationParameters::instance();
+    VariableParameters* variableP = &VariableParameters::instance();
+    PoolManager* getPool (unsigned index);
     void makePools(int number);
     std::string poolFile = "Data/pools.db";
-    bool readPools (MinerPopulation & DB);
-    void writePools (MinerPopulation & DB);
+    bool readPools ();
+    void writePools ();
+    void updateVariableP();
 public:
     static Pools& instance() {
         static Pools instance;
@@ -78,7 +84,7 @@ public:
     PoolManager* operator [] (unsigned index);
     unsigned int size();
     void print();
-    
+    void saveIndex();
 };
 
 //--------------------------------------------------------------------------------

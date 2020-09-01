@@ -179,22 +179,13 @@ public:
         }
         return name;
     }
-    auto new_population() {
-        std::mt19937 gen{ran()};
-        std::normal_distribution<> d(entityP->getMinersPopulationGrowthPars("mean"), entityP->getMinersPopulationGrowthPars("std"));
-        int a=0;
-        do
-            a = d(gen);
-        while (a<entityP->getMinersPopulationGrowthPars("min"));
-        return a;
-    }
     unsigned select_random_index(unsigned min, unsigned max) {
         std::mt19937 gen{ran()};
         std::uniform_int_distribution<> d(min, max);
         int a = d(gen);
         return a;
     }
-    long random_hash(long min, long max) {
+    long random_uniform_long(long min, long max) {
         std::mt19937 gen{ran()};
         std::uniform_int_distribution<long> d(min, max);
         long a = d(gen);
@@ -208,15 +199,6 @@ public:
             a = d(gen);
         while (a<0 || a>100);
         return a/100;
-    }
-    int miningPowerExpander(int m) {
-        std::mt19937 gen{ran()};
-        std::normal_distribution<float> d(1.4, 2);
-        double a = 0;
-        do
-            a = d(gen);
-        while (a<1);
-        return m*a;
     }
     auto miningPowerConsumption() {
         std::mt19937 gen{ran()};
@@ -255,8 +237,12 @@ public:
         std::mt19937 gen{ran()};
         std::normal_distribution<float> d(entityP->getPoolSize("mean"), entityP->getPoolSize("std"));
         double a = 0;
-        do
+        do {
             a = d(gen);
+            if (a<entityP->getPoolSize("min")) {
+                std::normal_distribution<float> d(entityP->getPoolSize("min"), entityP->getPoolSize("std")/100);
+            }
+        }
         while (a<entityP->getPoolSize("min") || a>=entityP->getPoolSize("max"));
         return a;
     }
@@ -271,12 +257,17 @@ public:
     }
     Money lossTolerance(Money investment) {
         std::mt19937 gen{ran()};
-        
         std::uniform_int_distribution<> d(entityP->lossToleranceFactor("min")*100, entityP->lossToleranceFactor("max")*100);
         double a = double(d(gen))/(-100);
         Money lossT;
         lossT = investment * a;
         return lossT;
+    }
+    double errorFactor(double mean, double std) {
+        std::mt19937 gen{ran()};
+        std::normal_distribution<double> d(mean,std);
+        double a = d(gen);
+        return a;
     }
 };
 

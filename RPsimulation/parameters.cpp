@@ -9,9 +9,6 @@ EntityParameters::EntityParameters() {
     dishonestyFactorMean = 0;
     dishonestyFactorStd = 10;
     dishonestyFactorMin = 0;
-    minersPopulationGrowthMean = 131;
-    minersPopulationGrowthStd = 86;
-    minersPopulationGrowthMin = 0;
     powerConsumptionMean = 0.09;
     powerConsumptionStd = 0.04;
     powerConsumptionMin = 0.02;
@@ -22,16 +19,16 @@ EntityParameters::EntityParameters() {
     POWrewardMin = 0.0;
     POWrewardMean = 0.02;
     POWrewardStd = 0.02;
-    poolSizeMean = 0.07;
-    poolSizeStd = 0.08;
-    poolSizeMin = 0.01;
+    poolSizeMean = 0.03;
+    poolSizeStd = 0.12;
+    poolSizeMin = 0.003;
     poolSizeMax = 0.49;
     probabilityConfidenceMean = 0.8;
     probabilityConfidenceStd = 0.15;
     probabilityConfidenceMin = 0.58;
     probabilityConfidenceMax = 0.95;
-    lossToleranceFactorMin = 0.08;
-    lossToleranceFactorMax = 0.19;
+    lossToleranceFactorMin = 0.04;
+    lossToleranceFactorMax = 0.18;
 }
 
 int EntityParameters::getMiningPowerPars(std::string parameter) {
@@ -52,15 +49,6 @@ int EntityParameters::getDishonestyFactorPars(std::string parameter) {
         return dishonestyFactorStd;
     else
         return dishonestyFactorMin;
-}
-
-int EntityParameters::getMinersPopulationGrowthPars(std::string parameter) {
-    if (parameter=="mean")
-        return minersPopulationGrowthMean;
-    else if (parameter=="std")
-        return minersPopulationGrowthStd;
-    else
-        return minersPopulationGrowthMin;
 }
 
 double EntityParameters::getPowerConsumptionPars(std::string parameter) {
@@ -125,8 +113,8 @@ double EntityParameters::lossToleranceFactor(std::string parameter) {
 
 MiningParameters::MiningParameters() {
     creationTime = 1473628916;
-    unitPrice = 9237;
-    unitPerNewBlock = 50;
+    unitPrice = 4497;
+    unitPerNewBlock = 20;
     miningTimeMean = 600;
     miningTimeStd = 300;
     minerMachinePricePerTh = 35;
@@ -164,8 +152,8 @@ double MiningParameters::getMinerMachinePricePerTh() {
 
 PopulationParameters::PopulationParameters() {
     defaultMinersPopulation = 43256;
-    defaultNumberOfPool = 76;
-    
+    defaultNumberOfPool = 32;
+    minersPopulationGrowth = 0.002;
 }
 
 //----------------------------------------------------------------------------------

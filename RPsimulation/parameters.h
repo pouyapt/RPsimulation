@@ -14,9 +14,6 @@ private:
     int dishonestyFactorMean;
     int dishonestyFactorStd;
     int dishonestyFactorMin;
-    int minersPopulationGrowthMean;
-    int minersPopulationGrowthStd;
-    int minersPopulationGrowthMin;
     double powerConsumptionMean;
     double powerConsumptionStd;
     double powerConsumptionMin;
@@ -44,7 +41,6 @@ public:
     }
     int getMiningPowerPars(std::string parameter);
     int getDishonestyFactorPars(std::string parameter);
-    int getMinersPopulationGrowthPars(std::string parameter);
     double getPowerConsumptionPars(std::string parameter);
     double getPoolFeesPars(std::string parameter);
     double getPOWreward(std::string parameter);
@@ -69,6 +65,7 @@ public:
         static MiningParameters instance;
         return instance;
     }
+    friend class Game;
     int getAverageMiningTime();
     double getUnitPrice();
     double getUnitPerNewBlock();
@@ -83,6 +80,7 @@ class PopulationParameters {
 private:
     unsigned defaultMinersPopulation;
     unsigned defaultNumberOfPool;
+    double minersPopulationGrowth;
     PopulationParameters();
 public:
     static PopulationParameters& instance() {
@@ -103,14 +101,27 @@ public:
     }
     friend class MinerPopulation;
     friend class Pools;
+    friend class Game;
     long getCurrentTotalHashPower();
     long getCurentMinersPopulation();
     long getCurrentPoolsPopulation();
+    friend void printStats();
 private:
     VariableParameters() {}
     long currentTotalHashPower = 0;
     long currentMinersPopulation = 0;
+    long currentInactiveMinersPopulation = 0;
     long currentPoolsPopulation = 0;
+    int numberOfSoloMiners = 0;
+    int numberOfPoolMiners = 0;
+    int MinersWithAtLeastOneBlock = 0;
+    int currentHighestMinerReputation = 0;
+    int currentLowestMinerReputation = 0;
+    int numberOfAllViolations = 0;
+    int numberOfDetectedViolations = 0;
+    double totalRevenue = 0;
+    double totalCost = 0;
+    int totalMinedBlocks = 0;
 };
 
 //----------------------------------------------------------------------------------

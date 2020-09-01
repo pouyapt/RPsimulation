@@ -488,3 +488,40 @@ std::istream& operator>>(std::istream& is, Money& dl) {
 
 //----------------------------------------------------------------------------------
 
+void printStats() {
+    MiningParameters* MP = &MiningParameters::instance();
+    VariableParameters* VP = &VariableParameters::instance();
+    Money unit;
+    unit = MP->getUnitPrice();
+    int unitPerBlock = MP->getUnitPerNewBlock();
+    long currentTotalHashPower = VP->currentTotalHashPower;
+    long currentMinersPopulation = VP->currentMinersPopulation;
+    long currentInactiveMinersPopulation = VP->currentInactiveMinersPopulation;
+    long currentPoolsPopulation = VP->currentPoolsPopulation;
+    int numberOfSoloMiners = VP->numberOfSoloMiners;
+    int numberOfPoolMiners = VP->numberOfPoolMiners;
+    int currentHighestMinerReputation = VP->currentHighestMinerReputation;
+    int currentLowestMinerReputation = VP->currentLowestMinerReputation;
+    //int numberOfAllViolations = VP->numberOfAllViolations;
+    //int numberOfDetectedViolations = VP->numberOfDetectedViolations;
+    int totalMinedBlocks = VP->totalMinedBlocks;
+    Money totalRevenue;
+    totalRevenue = VP->totalRevenue;
+    Money totalCost;
+    totalCost = VP->totalCost;
+    std::cout << "\n================ Statistics ===============\n";
+    std::cout << "Current Unit Value:       " << unit << std::endl;
+    std::cout << "Unit Per New Block:       " << unitPerBlock << std::endl;
+    std::cout << "Total Hash Power:         " << currentTotalHashPower << " TH/s" << std::endl;
+    std::cout << "Active Miners:            " << currentMinersPopulation << std::endl;
+    std::cout << "Inactive Miners:          " << currentInactiveMinersPopulation << std::endl;
+    std::cout << "Pools:                    " << currentPoolsPopulation << std::endl;
+    std::cout << "Solo vs. Pool Miners:     " << double(numberOfSoloMiners)/double(currentMinersPopulation)*100 << "% / " << double(numberOfPoolMiners)/double(currentMinersPopulation)*100 << "%" << std::endl;
+    //std::cout << "Top Miner Hash Power:     " << currentHighestHashPower << std::endl;
+    std::cout << "Highest Miner Reputation: " << currentHighestMinerReputation << std::endl;
+    std::cout << "Lowest Miner Reputation:  " << currentLowestMinerReputation << std::endl;
+    std::cout << "Total Mined Blocks:       " << totalMinedBlocks << std::endl;
+    std::cout << "Total Value of Blocks:    " << totalRevenue << std::endl;
+    std::cout << "Total Power Costs:        " << totalCost << std::endl;
+    std::cout << "===========================================\n";
+}
