@@ -112,22 +112,11 @@ double EntityParameters::lossToleranceFactor(std::string parameter) {
 //----------------------------------------------------------------------------------
 
 MiningParameters::MiningParameters() {
-    creationTime = 1473628916;
-    unitPrice = 4497;
-    unitPerNewBlock = 20;
-    miningTimeMean = 600;
+    creationTime = 0;   // 1473628916
+    miningTimeMean = 600; // in Seconds
     miningTimeStd = 300;
     minerMachinePricePerTh = 35;
 }
-
-double MiningParameters::getUnitPrice() {
-    return unitPrice;
-}
-
-double MiningParameters::getUnitPerNewBlock() {
-    return unitPerNewBlock;
-}
-
 
 double MiningParameters::getMiningTime(std::string parameter) {
     if (parameter=="mean")
@@ -151,9 +140,10 @@ double MiningParameters::getMinerMachinePricePerTh() {
 //----------------------------------------------------------------------------------
 
 PopulationParameters::PopulationParameters() {
-    defaultMinersPopulation = 43256;
+    minersCarryingCapacity = 67256;
+    zeroRevenuePopulation = double(minersCarryingCapacity)*0.75;
     defaultNumberOfPool = 32;
-    minersPopulationGrowth = 0.002;
+    minersPopulationGrowthRate = 0.11;
 }
 
 //----------------------------------------------------------------------------------
@@ -169,3 +159,12 @@ long VariableParameters::getCurentMinersPopulation() {
 long VariableParameters::getCurrentPoolsPopulation() {
     return currentPoolsPopulation;
 }
+
+double VariableParameters::getUnitPrice() {
+    return unitPrice;
+}
+
+double VariableParameters::getUnitPerNewBlock() {
+    return unitPerNewBlock;
+}
+

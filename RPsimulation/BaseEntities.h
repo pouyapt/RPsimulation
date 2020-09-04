@@ -24,6 +24,31 @@ struct machine {
 
 //----------------------------------------------------------------------------------
 
+class SineWaveModulator {
+public:
+    SineWaveModulator(double maxDistance, int decimals, int precision, int minPeriod, int maxPeriod);
+    VirtualTime* V = &VirtualTime::instance();
+    core::Random* gen = &core::Random::instance();
+    double apply();
+private:
+    int d;
+    int p;
+    int maxD;
+    int minP;
+    int maxP;
+    double mainFunction(long x, long a);
+    double calculateNextExterma();
+    long generatedTime;
+    long nextExterma;
+    double currentRate;
+    double currentDistance;
+    double offset = 0;
+    double lastCalculation = 0;
+    bool generateAttributes(long time);
+};
+
+//----------------------------------------------------------------------------------
+
 static class MinerMachines {
 private:
     core::list<machine> mList;
@@ -74,6 +99,7 @@ private:
     VirtualTime* virtualTime = &VirtualTime::instance();
     core::Random* gen = &core::Random::instance();
     MiningParameters* miningP = &MiningParameters::instance();
+    VariableParameters* variableP = &VariableParameters::instance();
     core::list<poolEvaluation> invitations;
     void processInvitation();
     Money estimatePoolProfit(PoolManager* PM);
@@ -106,6 +132,8 @@ public:
     int getMined();
     long getIndex();
     void savePoolManager(PoolManager* poolManager);
+    bool extracted();
+    
     void removePoolManager(PoolManager* poolManager);
     void receivePoolRewards(Money amount);
     void receivePowRewards(Money amount);

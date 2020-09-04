@@ -33,6 +33,44 @@ struct machine MinerMachines::randomPick() {
 
 //----------------------------------------------------------------------------------
 
+SineWaveModulator::SineWaveModulator(double maxDistance, int decimals, int precision, int minPeriod, int maxPeriod) {
+    d = decimals;
+    p = precision;
+    minP = minPeriod;
+    maxP = maxPeriod;
+    maxD = maxDistance * pow(10, d+p);
+    generateAttributes(V->getCurrentTime());
+}
+
+double SineWaveModulator::apply() {
+    if (V->getCurrentTime()>=nextExterma) {
+        offset = lastCalculation;
+        while (!generateAttributes(nextExterma));
+    }
+    return mainFunction(V->getCurrentTime(), generatedTime);
+}
+
+bool SineWaveModulator::generateAttributes(long time) {
+    currentRate = 1 / double(gen->random_uniform_long(minP, maxP));
+    currentDistance = gen->random_uniform_long(-maxD/2, maxD/2) * pow(10, -(d+p));
+    generatedTime = time;
+    nextExterma = calculateNextExterma();
+    if (nextExterma <=V->getCurrentTime())
+        return false;
+    return true;
+}
+
+double SineWaveModulator::mainFunction(long x, long a) {
+    lastCalculation = currentDistance * sin(currentRate*M_PI*(x-a)) + offset;
+    return lastCalculation;
+}
+
+double SineWaveModulator::calculateNextExterma() {
+    return 1 / (2*currentRate) + generatedTime;
+}
+
+//----------------------------------------------------------------------------------
+
 Miner::Miner(std::string option) {
     initialize();
     if (option=="blank")
@@ -83,7 +121,6 @@ int Miner::getMined() {
 Money Miner::getPowerCostPerHour() {
     return powerCostPerHour;
 }
-
 
 long Miner::getIndex() {
     return index;
@@ -156,7 +193,7 @@ void Miner::print() {
     std::cout << "------------------------------------------\n";
     std::cout << "Name:    \t\t" << firstName << " " << lastName << std::endl;
     std::cout << "ID:      \t\t" << idValue << std::endl;
-    std::cout << "Jonied On:\t\t" << asctime_c(std::localtime(&joinedTimestamp));
+    std::cout << "Jonied On:\t\t" << convertToDataTime(std::localtime(&joinedTimestamp));
     std::cout << "Hash Rate:\t\t" << miningPower << " TH/S" << std::endl;
     //std::cout << "DH Factor:\t\t" << dishonestyFactor << std::endl;
     std::cout << "Power Rate:\t\t" << powerConRate << " per KW" << std::endl;
@@ -196,7 +233,7 @@ Money Miner::estimatePoolProfit(PoolManager* PM) {
     double dailyPowProb = PM->getDailyPowProbability();
     int nDays = noOfRequiredTrials(dailyPowProb, probabilityConfidence);
     estimatePowerCost = powerCostPerHour * (nDays * 24);
-    double reward = (miningP->getUnitPerNewBlock()*miningP->getUnitPrice());
+    double reward = (variableP->getUnitPerNewBlock()*variableP->getUnitPrice());
     reward = reward - (reward * PM->poolFee());
     sharePerPow = (double(miningPower) / double(PM->poolHashPower())) * reward;
     profitFromPool = sharePerPow - estimatePowerCost;
@@ -609,3 +646,4 @@ void PoolManager::processCandidateMiners() {
 }
 
 //----------------------------------------------------------------------------------
+

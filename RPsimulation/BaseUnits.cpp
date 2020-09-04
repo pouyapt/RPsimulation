@@ -189,7 +189,7 @@ std::istream& operator>>(std::istream& is, Time& dl) {
 
 VirtualTime::VirtualTime() {
     if (!readTime())
-        last = 1000228870;
+        last = 0;  //1000228870;
 }
 
 VirtualTime::~VirtualTime() {
@@ -492,8 +492,8 @@ void printStats() {
     MiningParameters* MP = &MiningParameters::instance();
     VariableParameters* VP = &VariableParameters::instance();
     Money unit;
-    unit = MP->getUnitPrice();
-    int unitPerBlock = MP->getUnitPerNewBlock();
+    unit = VP->getUnitPrice();
+    int unitPerBlock = VP->getUnitPerNewBlock();
     long currentTotalHashPower = VP->currentTotalHashPower;
     long currentMinersPopulation = VP->currentMinersPopulation;
     long currentInactiveMinersPopulation = VP->currentInactiveMinersPopulation;

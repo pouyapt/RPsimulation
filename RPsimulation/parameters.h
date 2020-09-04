@@ -1,8 +1,14 @@
 #ifndef parameters_hpp
 #define parameters_hpp
 
-#include "foundation.h"
-
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <string>
+#include <random>
+#include <chrono>
+#include <thread>
+#include <cmath>
 
 class EntityParameters {
 private:
@@ -54,8 +60,6 @@ public:
 class MiningParameters {
 private:
     unsigned long creationTime;
-    double unitPrice;           // The Price of a Single Currency Unit
-    double unitPerNewBlock;     // Number of Reward Units for a New Block
     int miningTimeMean;       // Average mining time for a New Block
     int miningTimeStd;
     double minerMachinePricePerTh;
@@ -67,8 +71,6 @@ public:
     }
     friend class Game;
     int getAverageMiningTime();
-    double getUnitPrice();
-    double getUnitPerNewBlock();
     double getMiningTime(std::string parameter);
     unsigned long getCreationTime();
     double getMinerMachinePricePerTh();
@@ -78,17 +80,20 @@ public:
 
 class PopulationParameters {
 private:
-    unsigned defaultMinersPopulation;
+    unsigned minersCarryingCapacity;
+    double minersPopulationGrowthRate;
+    unsigned zeroRevenuePopulation;
     unsigned defaultNumberOfPool;
-    double minersPopulationGrowth;
     PopulationParameters();
 public:
     static PopulationParameters& instance() {
         static PopulationParameters instance;
         return instance;
     }
+    friend double calculatePopulationGrowth();
     friend class MinerPopulation;
     friend class Pools;
+    friend class Game;
 };
 
 //----------------------------------------------------------------------------------
@@ -105,13 +110,18 @@ public:
     long getCurrentTotalHashPower();
     long getCurentMinersPopulation();
     long getCurrentPoolsPopulation();
+    double getUnitPrice();
+    double getUnitPerNewBlock();
     friend void printStats();
 private:
     VariableParameters() {}
+    double unitPrice = 0;
+    double unitPerNewBlock = 0;
     long currentTotalHashPower = 0;
     long currentMinersPopulation = 0;
     long currentInactiveMinersPopulation = 0;
     long currentPoolsPopulation = 0;
+    double currentCostRewardRatio = 0;
     int numberOfSoloMiners = 0;
     int numberOfPoolMiners = 0;
     int MinersWithAtLeastOneBlock = 0;

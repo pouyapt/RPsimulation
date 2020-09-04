@@ -10,7 +10,7 @@ MinerPopulation::MinerPopulation(int population) {
     readMinerPopulation_inactive();
     updateVariableParameters();
     if (population==INT_MIN)
-        population = populationP->defaultMinersPopulation;
+        population = populationP->minersCarryingCapacity;
     for (auto i=0; i<population; i++)
         addMiner();
 }
@@ -35,10 +35,10 @@ Miner* MinerPopulation::operator [](unsigned index) {
 }
 
 void MinerPopulation::updateList() {
-    int removedCount = removeLostMiners();
+    removeLostMiners();
     removeLosingMinersFromPools();
-    double n = gen->errorFactor(populationP->minersPopulationGrowth, 0.006)/144;
-    int newPopulation = (n * list.size()) + removedCount;
+    //double n = gen->errorFactor(populationP->minersPopulationGrowthRate, 0.006)/144;
+    int newPopulation = list.size() * calculatePopulationGrowth(int(list.size()), populationP->minersCarryingCapacity, populationP->minersPopulationGrowthRate);
     for (auto i=0; i<newPopulation; i++)
         addMiner();
 }
@@ -330,11 +330,15 @@ int MinerPopulation::MinersWithProfit() {
 
 //----------------------------------------------------------------------------------
 
-Pools::Pools() {
+Pools::Pools(int population) {
     if (!readPools()) {
-        makePools(populationP->defaultNumberOfPool);
+        if (population==INT_MIN)
+            makePools(populationP->defaultNumberOfPool);
+        else
+            makePools(population);
     }
-    MP->readMinersInvitations(this);
+    else
+        MP->readMinersInvitations(this);
     updateVariableP();
 }
 

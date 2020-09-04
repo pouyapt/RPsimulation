@@ -263,10 +263,14 @@ public:
         lossT = investment * a;
         return lossT;
     }
-    double errorFactor(double mean, double std) {
+    double errorFactor(double mean, double std, bool onlyPositive=false) {
         std::mt19937 gen{ran()};
         std::normal_distribution<double> d(mean,std);
         double a = d(gen);
+        if (onlyPositive==true && a<0) {
+            while (a<0)
+                a = d(gen);
+        }
         return a;
     }
 };

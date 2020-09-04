@@ -30,6 +30,7 @@ private:
     PopulationParameters* populationP = &PopulationParameters::instance();
     core::Random* gen = &core::Random::instance();
     VariableParameters* variableP = &VariableParameters::instance();
+    VirtualTime* T = &VirtualTime::instance();
     int removeLostMiners();
     void removeLosingMinersFromPools();
 public:
@@ -63,7 +64,7 @@ public:
 
 class Pools {
 private:
-    Pools();
+    Pools(int population);
     ~Pools();
     core::list<PoolManager*> poolList;
     MinerPopulation* MP = &MinerPopulation::instance(0);
@@ -76,8 +77,8 @@ private:
     void writePools ();
     void updateVariableP();
 public:
-    static Pools& instance() {
-        static Pools instance;
+    static Pools& instance(int population=INT_MIN) {
+        static Pools instance(population);
         return instance;
     }
     Pools(Pools &orig) = delete;

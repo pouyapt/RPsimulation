@@ -13,7 +13,7 @@
 		9279C8D024D8BF39007197D4 /* parameters.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9279C8CE24D8BF39007197D4 /* parameters.cpp */; };
 		928CC37324B4EC60000788F9 /* interactions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 928CC37124B4EC60000788F9 /* interactions.cpp */; };
 		92BC1A0B24B2A498005E84CE /* BaseUnits.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 92BC1A0924B2A498005E84CE /* BaseUnits.cpp */; };
-		92F9EDA324E99402009ED6D9 /* foundation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 92F9EDA124E99402009ED6D9 /* foundation.cpp */; };
+		92F9EDA324E99402009ED6D9 /* BasicFunctions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 92F9EDA124E99402009ED6D9 /* BasicFunctions.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -44,8 +44,8 @@
 		92BB303B2447BB3E006EDB1E /* BaseEntities.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BaseEntities.h; sourceTree = "<group>"; };
 		92BC1A0824B2A46A005E84CE /* BaseUnits.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BaseUnits.h; sourceTree = "<group>"; };
 		92BC1A0924B2A498005E84CE /* BaseUnits.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = BaseUnits.cpp; sourceTree = "<group>"; };
-		92F9EDA124E99402009ED6D9 /* foundation.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = foundation.cpp; sourceTree = "<group>"; };
-		92F9EDA224E99402009ED6D9 /* foundation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = foundation.h; sourceTree = "<group>"; };
+		92F9EDA124E99402009ED6D9 /* BasicFunctions.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = BasicFunctions.cpp; sourceTree = "<group>"; };
+		92F9EDA224E99402009ED6D9 /* BasicFunctions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BasicFunctions.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,10 +79,10 @@
 			isa = PBXGroup;
 			children = (
 				9254D44824F1B00A00F1D963 /* MinerMachines.rtf */,
-				92F9EDA224E99402009ED6D9 /* foundation.h */,
-				92F9EDA124E99402009ED6D9 /* foundation.cpp */,
 				9279C8CF24D8BF39007197D4 /* parameters.h */,
 				9279C8CE24D8BF39007197D4 /* parameters.cpp */,
+				92F9EDA224E99402009ED6D9 /* BasicFunctions.h */,
+				92F9EDA124E99402009ED6D9 /* BasicFunctions.cpp */,
 				92ADCBFD2448E3A700BC2F59 /* listDS.h */,
 				92BC1A0824B2A46A005E84CE /* BaseUnits.h */,
 				92BC1A0924B2A498005E84CE /* BaseUnits.cpp */,
@@ -160,7 +160,7 @@
 				92BC1A0B24B2A498005E84CE /* BaseUnits.cpp in Sources */,
 				928CC37324B4EC60000788F9 /* interactions.cpp in Sources */,
 				923B84BA24F82BC6002BF4A4 /* main.cpp in Sources */,
-				92F9EDA324E99402009ED6D9 /* foundation.cpp in Sources */,
+				92F9EDA324E99402009ED6D9 /* BasicFunctions.cpp in Sources */,
 				9279C8D024D8BF39007197D4 /* parameters.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

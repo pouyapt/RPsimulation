@@ -6,6 +6,7 @@ Game::Game() {
     if (!ReadGameFile()) {
         totalNetworkRevenue = 0;
         totalNetworkCosts = 0;
+        generateInitialUnitPrice();
     }
     updateVariableParameters();
 }
@@ -18,6 +19,9 @@ void Game::updateVariableParameters() {
     variableP->totalRevenue = totalNetworkRevenue.convert();
     variableP->totalCost = totalNetworkCosts.convert();
     variableP->totalMinedBlocks = totalMinedBlocks;
+    variableP->unitPrice = unitPrice.convert();
+    variableP->unitPerNewBlock = unitsPerBlock;
+    variableP->currentCostRewardRatio = currentCostRewardRatio;
 }
 
 Miner* Game::winerMiner() {
@@ -51,6 +55,8 @@ bool Game::ReadGameFile() {
     in >> totalMinedBlocks;
     in >> lastRoundDuration;
     in >> lastRoundPowerCost;
+    in >> unitPrice;
+    in >> unitsPerBlock;
     in.close();
     return true;
 }
@@ -63,6 +69,8 @@ void Game::WriteGameFile() {
     out << totalMinedBlocks << std::endl;
     out << lastRoundDuration.convertToNumber() << std::endl;
     out << lastRoundPowerCost.convert() << std::endl;
+    out << unitPrice.convert() << std::endl;
+    out << unitsPerBlock << std::endl;
     out.close();
     std::cout << "The game data has been saved." << std::endl;
 }
@@ -85,7 +93,7 @@ void Game::updateMinersPowerCost() {
 
 void Game::mine(int count) {
     Money reward;
-    reward = miningP->getUnitPerNewBlock()*miningP->getUnitPrice();
+    reward = unitPrice * unitsPerBlock;
     for (int i=0; i<count; i++) {
         updateMinersPowerCost();
         Miner* winner = winerMiner();
@@ -102,13 +110,17 @@ void Game::mine(int count) {
 }
 
 void Game::updateUnitPrice() {
-    double p = gen->errorFactor(1.15, 0.001);
+    currentCostRewardRatio = sigmoidFunction(MP->size(), populationP->zeroRevenuePopulation, 0.3, 4000);
     Money aveCost;
     aveCost = lastRoundPowerCost.convert() / lastRoundDuration.convertToNumber();
-    aveCost = aveCost*600;
-    miningP->unitPrice = aveCost.convert()/miningP->unitPerNewBlock * p;
+    aveCost = aveCost * miningP->miningTimeMean;
+    unitPrice = (aveCost.convert() / unitsPerBlock) * (currentCostRewardRatio + 1);
 }
 
+void Game::generateInitialUnitPrice() {
+    double p = double(MP->size()) * gen->errorFactor(2, 0.7, true) / unitsPerBlock;
+    unitPrice = p;
+}
 
 
 

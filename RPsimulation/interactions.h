@@ -21,12 +21,16 @@ private:
     Pools* P = &Pools::instance();
     MiningParameters* miningP = &MiningParameters::instance();
     VariableParameters* variableP = &VariableParameters::instance();
+    PopulationParameters* populationP = &PopulationParameters::instance();
     core::Random* gen = &core::Random::instance();
     void updateMinersPowerCost();
     Miner* winerMiner();
     Money totalNetworkRevenue;
     Money totalNetworkCosts;
+    Money unitPrice;
+    int unitsPerBlock = 20;
     int totalMinedBlocks;
+    double currentCostRewardRatio;
     std::string file;
     Time lastRoundDuration;
     Money lastRoundPowerCost;
@@ -34,6 +38,7 @@ private:
     void WriteGameFile();
     void updateVariableParameters();
     void updateUnitPrice();
+    void generateInitialUnitPrice();
 public:
     static Game& instance() {
         static Game instance;

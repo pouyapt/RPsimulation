@@ -1,4 +1,4 @@
-#include "foundation.h"
+#include "BasicFunctions.h"
 
 bool is_file_exist(const char *fileName) {
     std::ifstream infile(fileName);
@@ -11,7 +11,7 @@ void databaseInit() {
     }
 }
 
-char* asctime_c(const struct tm *timeptr) {
+char* convertToDataTime(const struct tm *timeptr) {
   static const char mon_name[][4] = {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
@@ -31,4 +31,14 @@ int noOfRequiredTrials(double probability, double targetProbability) {
     while (p<targetProbability)
         p = atLeastOneOccurencePerNTrial(probability, ++n);
     return n;
+}
+
+double calculatePopulationGrowth(unsigned p, unsigned m, double k) {
+    return k*(1-(double(p)/double(m)));
+}
+
+double sigmoidFunction(long x, long carryingCapacity, double range, double squeezeFactor) {
+    double e = 2.7182818285;
+    double y = (range / (1+pow(e, (1/squeezeFactor)*(x-carryingCapacity)))) - (range/2);
+    return y;
 }
