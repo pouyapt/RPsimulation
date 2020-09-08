@@ -1,36 +1,6 @@
 #include "parameters.h"
 
 
-EntityParameters::EntityParameters() {
-    miningPowerMean = 82;
-    miningPowerStd = 6976;
-    miningPowerMin = 8;
-    miningPowerLowRange = 72;
-    dishonestyFactorMean = 0;
-    dishonestyFactorStd = 10;
-    dishonestyFactorMin = 0;
-    powerConsumptionMean = 0.09;
-    powerConsumptionStd = 0.04;
-    powerConsumptionMin = 0.02;
-    powerConsumptionMax = 0.16;
-    poolFeeMin = 15;
-    poolFeeMax = 45;
-    POWrewardMax = 0.05;
-    POWrewardMin = 0.0;
-    POWrewardMean = 0.02;
-    POWrewardStd = 0.02;
-    poolSizeMean = 0.03;
-    poolSizeStd = 0.12;
-    poolSizeMin = 0.003;
-    poolSizeMax = 0.49;
-    probabilityConfidenceMean = 0.8;
-    probabilityConfidenceStd = 0.15;
-    probabilityConfidenceMin = 0.58;
-    probabilityConfidenceMax = 0.95;
-    lossToleranceFactorMin = 0.04;
-    lossToleranceFactorMax = 0.18;
-}
-
 int EntityParameters::getMiningPowerPars(std::string parameter) {
     if (parameter=="mean")
         return miningPowerMean;
@@ -111,13 +81,6 @@ double EntityParameters::lossToleranceFactor(std::string parameter) {
 
 //----------------------------------------------------------------------------------
 
-MiningParameters::MiningParameters() {
-    creationTime = 0;   // 1473628916
-    miningTimeMean = 600; // in Seconds
-    miningTimeStd = 300;
-    minerMachinePricePerTh = 35;
-}
-
 double MiningParameters::getMiningTime(std::string parameter) {
     if (parameter=="mean")
         return miningTimeMean;
@@ -125,8 +88,8 @@ double MiningParameters::getMiningTime(std::string parameter) {
         return miningTimeStd;
 }
 
-unsigned long MiningParameters::getCreationTime() {
-    return creationTime;
+unsigned long MiningParameters::getZeroTimeOffset() {
+    return zeroTimeOffset;
 }
 
 int MiningParameters::getAverageMiningTime() {
@@ -135,15 +98,6 @@ int MiningParameters::getAverageMiningTime() {
 
 double MiningParameters::getMinerMachinePricePerTh() {
     return minerMachinePricePerTh;
-}
-
-//----------------------------------------------------------------------------------
-
-PopulationParameters::PopulationParameters() {
-    minersCarryingCapacity = 67256;
-    zeroRevenuePopulation = double(minersCarryingCapacity)*0.75;
-    defaultNumberOfPool = 32;
-    minersPopulationGrowthRate = 0.11;
 }
 
 //----------------------------------------------------------------------------------
@@ -166,5 +120,8 @@ double VariableParameters::getUnitPrice() {
 
 double VariableParameters::getUnitPerNewBlock() {
     return unitPerNewBlock;
+}
+void VariableParameters::updateNumberOfPoolMiners(int i) {
+    numberOfPoolMiners += i;
 }
 

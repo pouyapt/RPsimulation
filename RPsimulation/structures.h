@@ -6,41 +6,43 @@
 
 class MinerPopulation {
 private:
-    MinerPopulation(int population);
+    MinerPopulation();
     ~MinerPopulation();
-    core::list<Miner*> list;
-    core::list<Miner*> list_inactive;
+    core::list<Miner*> mainList;
+    core::list<Miner*> removedList;
     long totalHashPower_;
     int allViolationsCount = 0;
     int detectedViolationsCount = 0;
-    std::string file;
-    std::string file_inactive;
-    int soloMiners = 0;
-    void writeMinersAttr(core::list<Miner*> &L, std::ofstream &out);
-    void readMinersAttr(core::list<Miner*> &L, std::ifstream &in);
-    void writeMinerPopulation();
-    bool readMinerPopulation();
-    void writeMinerPopulation_inactive();
-    bool readMinerPopulation_inactive();
-    void addMiner();
+    long removedMinersCount = 0;
+    std::string populationDataFile = "Data/p_data.db";
+    std::string minersDataFile = "Data/p_list.db";
+    std::string removedMinersDataFile = "Data/p_list_removed.db";
+    void writeMinersData(std::ofstream &out);
+    void readMinersData(std::ifstream &in, int size);
+    void writePopulationData();
+    bool readPopulationData();
+    void writeRemovedMiners();
+    void addMiner(long time=0);
     void deleteMiner(unsigned index);
     void shuffleValueGen();
     void saveOldOrder();
     void updateVariableParameters();
     PopulationParameters* populationP = &PopulationParameters::instance();
+    MiningParameters* miningP = &MiningParameters::instance();
     core::Random* gen = &core::Random::instance();
     VariableParameters* variableP = &VariableParameters::instance();
-    VirtualTime* T = &VirtualTime::instance();
+    MasterTime* T = &MasterTime::instance();
     int removeLostMiners();
     void removeLosingMinersFromPools();
+    int calculateNewPopulation();
 public:
-    static MinerPopulation& instance(int population=INT_MIN) {
-        static MinerPopulation instance(population);
+    static MinerPopulation& instance() {
+        static MinerPopulation instance;
         return instance;
     }
     MinerPopulation(MinerPopulation &orig) = delete;
     unsigned int size();
-    void updateList();
+    void updateLosingMiners();
     Miner* operator [] (unsigned index);
     MinerPopulation operator=(MinerPopulation &orig) = delete;
     long totalHashPower();
@@ -51,13 +53,14 @@ public:
     void shuffleList();
     void undoShuffleList();
     void printActiveMiners();
-    void printInactiveMiners();
     void printPopulationStat();
     void writeMinersInvitations(Pools* P);
     void readMinersInvitations(Pools* P);
+    void updatePopulation(long time);
     int topHashPower();
     int MinersWithAtLeastOneBlock();
     int MinersWithProfit();
+    double population;
 };
 
 //--------------------------------------------------------------------------------
@@ -67,7 +70,7 @@ private:
     Pools(int population);
     ~Pools();
     core::list<PoolManager*> poolList;
-    MinerPopulation* MP = &MinerPopulation::instance(0);
+    MinerPopulation* MP = &MinerPopulation::instance();
     PopulationParameters* populationP = &PopulationParameters::instance();
     VariableParameters* variableP = &VariableParameters::instance();
     PoolManager* getPool (unsigned index);
@@ -82,6 +85,7 @@ public:
         return instance;
     }
     Pools(Pools &orig) = delete;
+    Pools operator=(Pools &orig) = delete;
     PoolManager* operator [] (unsigned index);
     unsigned int size();
     void print();

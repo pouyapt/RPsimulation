@@ -51,8 +51,10 @@ double SineWaveModulator::apply() {
 }
 
 bool SineWaveModulator::generateAttributes(long time) {
-    currentRate = 1 / double(gen->random_uniform_long(minP, maxP));
-    currentDistance = gen->random_uniform_long(-maxD/2, maxD/2) * pow(10, -(d+p));
+    long rateDen = gen->random_uniform_long(minP, maxP);
+    currentRate = 1 / double(rateDen);
+    int range = (double(rateDen)/double(maxP)) * maxD;
+    currentDistance = gen->random_uniform_long(-range/2, range/2) * pow(10, -(d+p));
     generatedTime = time;
     nextExterma = calculateNextExterma();
     if (nextExterma <=V->getCurrentTime())
@@ -67,6 +69,44 @@ double SineWaveModulator::mainFunction(long x, long a) {
 
 double SineWaveModulator::calculateNextExterma() {
     return 1 / (2*currentRate) + generatedTime;
+}
+
+//----------------------------------------------------------------------------------
+
+MasterTime::~MasterTime() {
+    for (auto i=0; i<M.size(); i++) {
+        delete M[i];
+    }
+}
+
+void MasterTime::applyModulators() {
+    for (auto i=0; i<M.size(); i++)
+        M[i]->apply();
+}
+
+long MasterTime::getCurrentTime() {
+    applyModulators();
+    return VT->getCurrentTime();
+}
+
+long MasterTime::addSecondsToCurrentTime(long seconds) {
+    VT->addSecondsToCurrentTime(seconds);
+    applyModulators();
+    return VT->getCurrentTime();
+}
+
+long MasterTime::addHoursToCurrentTime(double hours) {
+    return VT->addHoursToCurrentTime(hours);
+}
+
+unsigned MasterTime::createNewModulator(double maxDistance, int decimals, int precision, int minPeriod, int maxPeriod) {
+    SineWaveModulator* m = new SineWaveModulator(maxDistance, decimals, precision, minPeriod, maxPeriod);
+    M.push_back(m);
+    return unsigned(M.size()-1);
+}
+
+double MasterTime::getModulatorValue(int index) {
+    return M[index]->apply();
 }
 
 //----------------------------------------------------------------------------------
@@ -161,7 +201,7 @@ void Miner::generateInitialValues() {
     firstName = gen->name();
     lastName = gen->name();
     idValue = gen->id_number(1000000000000000, 2000000000000000);
-    joinedTimestamp = virtualTime->addSecondsToCurrentTime(gen->select_random_index(61, 4130));
+    joinedTimestamp = T->getCurrentTime();
     miningPower = gen->minig_power();
     dishonestyFactor = gen->dishonestyFactor();
     powerConRate = gen->miningPowerConsumption();
@@ -193,7 +233,7 @@ void Miner::print() {
     std::cout << "------------------------------------------\n";
     std::cout << "Name:    \t\t" << firstName << " " << lastName << std::endl;
     std::cout << "ID:      \t\t" << idValue << std::endl;
-    std::cout << "Jonied On:\t\t" << convertToDataTime(std::localtime(&joinedTimestamp));
+    std::cout << "Jonied On:\t\t" << convertToDate_Time(joinedTimestamp);
     std::cout << "Hash Rate:\t\t" << miningPower << " TH/S" << std::endl;
     //std::cout << "DH Factor:\t\t" << dishonestyFactor << std::endl;
     std::cout << "Power Rate:\t\t" << powerConRate << " per KW" << std::endl;
@@ -564,6 +604,7 @@ bool PoolManager::pickMiner(Miner* miner) {
     MiningPool::addMiner(miner);
     miner->savePoolManager(this);
     computeDesiredHash();
+    variableP->updateNumberOfPoolMiners(1);
     return true;
 }
 
@@ -571,6 +612,7 @@ bool PoolManager::releaseMiner(Miner* miner) {
     if (MiningPool::removeMiner(miner)) {
         miner->removePoolManager(this);
         computeDesiredHash();
+        variableP->updateNumberOfPoolMiners(-1);
         return true;
     }
     return false;

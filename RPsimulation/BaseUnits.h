@@ -47,6 +47,7 @@ public:
 class VirtualTime {
 private:
     unsigned long last;
+    MiningParameters* miningP = &MiningParameters::instance();
     void writeTime();
     bool readTime();
     VirtualTime();
@@ -56,9 +57,9 @@ public:
         static VirtualTime instance;
         return instance;
     }
-    unsigned long getCurrentTime();
-    unsigned long addSecondsToCurrentTime(unsigned long seconds);
-    unsigned long addHoursToCurrentTime(double hours);
+    long getCurrentTime();
+    long addSecondsToCurrentTime(long seconds);
+    long addHoursToCurrentTime(double hours);
 };
 
 
@@ -116,5 +117,6 @@ public:
 //----------------------------------------------------------------------------------
 
 void printStats();
+void saveStats_csv();
 
 #endif /* foundation_h */

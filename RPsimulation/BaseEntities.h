@@ -25,12 +25,11 @@ struct machine {
 //----------------------------------------------------------------------------------
 
 class SineWaveModulator {
-public:
+private:
     SineWaveModulator(double maxDistance, int decimals, int precision, int minPeriod, int maxPeriod);
     VirtualTime* V = &VirtualTime::instance();
     core::Random* gen = &core::Random::instance();
     double apply();
-private:
     int d;
     int p;
     int maxD;
@@ -45,6 +44,30 @@ private:
     double offset = 0;
     double lastCalculation = 0;
     bool generateAttributes(long time);
+public:
+    friend class MasterTime;
+};
+
+//----------------------------------------------------------------------------------
+
+class MasterTime {
+private:
+    MasterTime() {}
+    ~MasterTime();
+    VirtualTime* VT = &VirtualTime::instance();
+    std::vector<SineWaveModulator*> M;
+    void applyModulators();
+public:
+    static MasterTime& instance() {
+        static MasterTime instance;
+        return instance;
+    }
+    long getCurrentTime();
+    MasterTime operator=(const MasterTime & orig) = delete;
+    long addSecondsToCurrentTime(long seconds);
+    long addHoursToCurrentTime(double hours);
+    unsigned createNewModulator(double maxDistance, int decimals, int precision, int minPeriod, int maxPeriod);
+    double getModulatorValue(int index);
 };
 
 //----------------------------------------------------------------------------------
@@ -96,7 +119,7 @@ private:
     void generateInitialValues();
     void powerCostCalculator();
     PoolManager* pool;
-    VirtualTime* virtualTime = &VirtualTime::instance();
+    MasterTime* T = &MasterTime::instance();
     core::Random* gen = &core::Random::instance();
     MiningParameters* miningP = &MiningParameters::instance();
     VariableParameters* variableP = &VariableParameters::instance();
@@ -131,16 +154,15 @@ public:
     bool isTaken();
     int getMined();
     long getIndex();
-    void savePoolManager(PoolManager* poolManager);
     bool extracted();
-    
-    void removePoolManager(PoolManager* poolManager);
     void receivePoolRewards(Money amount);
     void receivePowRewards(Money amount);
     void addCost(Money amount);
     void receiveInvitation(PoolManager* p);
     bool isBellowLossTolerance();
     bool needsToExitPool();
+    void savePoolManager(PoolManager* poolManager);
+    void removePoolManager(PoolManager* poolManager);
     void print();
 };
 

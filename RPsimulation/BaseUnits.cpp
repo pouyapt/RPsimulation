@@ -189,38 +189,38 @@ std::istream& operator>>(std::istream& is, Time& dl) {
 
 VirtualTime::VirtualTime() {
     if (!readTime())
-        last = 0;  //1000228870;
+        last = 0;
 }
 
 VirtualTime::~VirtualTime() {
     writeTime();
 }
 
-unsigned long VirtualTime::getCurrentTime() {
+long VirtualTime::getCurrentTime() {
     return last;
 }
 
-unsigned long VirtualTime::addSecondsToCurrentTime(unsigned long seconds) {
+long VirtualTime::addSecondsToCurrentTime(long seconds) {
     last += seconds;
     return last;
 }
 
-unsigned long VirtualTime::addHoursToCurrentTime(double hours) {
-    unsigned long seconds = hours * 3600;
+long VirtualTime::addHoursToCurrentTime(double hours) {
+    long seconds = hours * 3600;
     last += seconds;
     return last;
 }
 
 void VirtualTime::writeTime() {
     std::ofstream out;
-    out.open("Source/time.db");
+    out.open("Data/time.db");
     out << last << std::endl;
     out.close();
 }
 
 bool VirtualTime::readTime() {
     std::ifstream in;
-    in.open("Source/time.db");
+    in.open("Data/time.db");
     if (in.fail())
         return false;
     in >> last;
@@ -489,39 +489,54 @@ std::istream& operator>>(std::istream& is, Money& dl) {
 //----------------------------------------------------------------------------------
 
 void printStats() {
-    MiningParameters* MP = &MiningParameters::instance();
     VariableParameters* VP = &VariableParameters::instance();
-    Money unit;
-    unit = VP->getUnitPrice();
-    int unitPerBlock = VP->getUnitPerNewBlock();
-    long currentTotalHashPower = VP->currentTotalHashPower;
-    long currentMinersPopulation = VP->currentMinersPopulation;
-    long currentInactiveMinersPopulation = VP->currentInactiveMinersPopulation;
-    long currentPoolsPopulation = VP->currentPoolsPopulation;
-    int numberOfSoloMiners = VP->numberOfSoloMiners;
-    int numberOfPoolMiners = VP->numberOfPoolMiners;
-    int currentHighestMinerReputation = VP->currentHighestMinerReputation;
-    int currentLowestMinerReputation = VP->currentLowestMinerReputation;
-    //int numberOfAllViolations = VP->numberOfAllViolations;
-    //int numberOfDetectedViolations = VP->numberOfDetectedViolations;
-    int totalMinedBlocks = VP->totalMinedBlocks;
+    Money unitPrice;
+    unitPrice = VP->getUnitPrice();
     Money totalRevenue;
     totalRevenue = VP->totalRevenue;
     Money totalCost;
     totalCost = VP->totalCost;
+    std::time_t lastBlockTime = VP->lastGeneratedBlockTime;
     std::cout << "\n================ Statistics ===============\n";
-    std::cout << "Current Unit Value:       " << unit << std::endl;
-    std::cout << "Unit Per New Block:       " << unitPerBlock << std::endl;
-    std::cout << "Total Hash Power:         " << currentTotalHashPower << " TH/s" << std::endl;
-    std::cout << "Active Miners:            " << currentMinersPopulation << std::endl;
-    std::cout << "Inactive Miners:          " << currentInactiveMinersPopulation << std::endl;
-    std::cout << "Pools:                    " << currentPoolsPopulation << std::endl;
-    std::cout << "Solo vs. Pool Miners:     " << double(numberOfSoloMiners)/double(currentMinersPopulation)*100 << "% / " << double(numberOfPoolMiners)/double(currentMinersPopulation)*100 << "%" << std::endl;
-    //std::cout << "Top Miner Hash Power:     " << currentHighestHashPower << std::endl;
-    std::cout << "Highest Miner Reputation: " << currentHighestMinerReputation << std::endl;
-    std::cout << "Lowest Miner Reputation:  " << currentLowestMinerReputation << std::endl;
-    std::cout << "Total Mined Blocks:       " << totalMinedBlocks << std::endl;
+    std::cout << "Current Unit Value:       " << unitPrice << std::endl;
+    std::cout << "Unit Per New Block:       " << VP->getUnitPerNewBlock() << std::endl;
+    std::cout << "Total Hash Power:         " << VP->currentTotalHashPower << " TH/s" << std::endl;
+    std::cout << "Active Miners:            " << VP->currentMinersPopulation << std::endl;
+    std::cout << "Inactive Miners:          " << VP->currentInactiveMinersPopulation << std::endl;
+    std::cout << "Pools:                    " << VP->currentPoolsPopulation << std::endl;
+    std::cout << "Solo / Pool Miners:       " << double(VP->currentMinersPopulation - VP->numberOfPoolMiners)/double(VP->currentMinersPopulation)*100 << "% / " << double(VP->numberOfPoolMiners)/double(VP->currentMinersPopulation)*100 << "%" << std::endl;
+
+    std::cout << "Last Generated Block:     " << convertToDate_Time(lastBlockTime);
+    std::cout << "Highest Miner Reputation: " << VP->currentHighestMinerReputation << std::endl;
+    std::cout << "Lowest Miner Reputation:  " << VP->currentLowestMinerReputation << std::endl;
+    std::cout << "Total Mined Blocks:       " << VP->totalMinedBlocks << std::endl;
     std::cout << "Total Value of Blocks:    " << totalRevenue << std::endl;
     std::cout << "Total Power Costs:        " << totalCost << std::endl;
     std::cout << "===========================================\n";
+}
+
+void saveStats_csv() {
+    statFileInit();
+    VariableParameters* VP = &VariableParameters::instance();
+    VirtualTime* T = &VirtualTime::instance();
+    MiningParameters* MP = &MiningParameters::instance();
+    std::string filename = "stats.csv";
+    std::fstream uidlFile(filename, std::fstream::in | std::fstream::out | std::fstream::app);
+     if (uidlFile.is_open()) {
+         
+         uidlFile << T->getCurrentTime() << ",";
+         uidlFile << VP->getUnitPrice() << ",";
+         uidlFile << VP->getUnitPerNewBlock() << ",";
+         uidlFile << VP->currentTotalHashPower << ",";
+         uidlFile << VP->currentMinersPopulation << ",";
+         uidlFile << VP->currentPoolsPopulation << ",";
+         uidlFile << VP->numberOfPoolMiners << ",";
+         uidlFile << VP->totalRevenue << ",";
+         uidlFile << VP->totalCost << std::endl;
+         
+         uidlFile.close();
+     }
+     else {
+       std::cout << "Cannot open file" << std::endl;
+     }
 }

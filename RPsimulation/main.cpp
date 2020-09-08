@@ -12,28 +12,33 @@ void minerAndPoolsTest(MinerPopulation* MP, Pools* P) {
 }
 
 
-
-
 int main() {
-    core::Random* gen = &core::Random::instance();
-    VirtualTime* V = &VirtualTime::instance();
-    
-    SineWaveModulator O(0.36, 2, 3, 2400, 604800);
-
-    for (int i=0; i<30000; i++) {
-        std::cout << O.apply() << std::endl;
-        V->addSecondsToCurrentTime(60);
+//    core::Random* gen = &core::Random::instance();
+//    VirtualTime* V = &VirtualTime::instance();
+//    MasterTime* M = &MasterTime::instance();
+//    M->createNewModulator(0.1, 2, 3, 1800, 86400);
+//    SineWaveModulator O(0.1, 2, 3, 1800, 86400);
+//
+//    for (int i=0; i<200000; i++) {
+//        std::cout << O.apply() << std::endl;
+//        V->addSecondsToCurrentTime(10);
+//    }
+    MinerPopulation* MP = &MinerPopulation::instance();
+    Pools* P = &Pools::instance();
+    Game* G = &Game::instance();
+    for (auto j=0; j<14; j++) {
+        //minerAndPoolsTest(MP, P);
+        for (auto i=0; i<144; i++) {
+            G->mine(1);
+        }
     }
     
     
-    //MinerPopulation* MP = &MinerPopulation::instance(10);
-    //Pools* P = &Pools::instance();
-    //minerAndPoolsTest(MP, P);
-    //Game* G = &Game::instance();
-    //G->mine(1);
-    //MP->sort("mc");
-    //MP->printActiveMiners();
+    //MP->sort("mp");
+    MP->printActiveMiners();
     //P->print();
-    //printStats();
+    printStats();
+    
+    
 }
 

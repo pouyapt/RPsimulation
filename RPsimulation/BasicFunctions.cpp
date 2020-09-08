@@ -1,17 +1,25 @@
 #include "BasicFunctions.h"
 
-bool is_file_exist(const char *fileName) {
+bool file_exist(const char *fileName) {
     std::ifstream infile(fileName);
     return infile.good();
 }
 
 void databaseInit() {
-    if (!is_file_exist("Data")) {
+    if (!file_exist("Data")) {
         system("mkdir Data");
     }
 }
 
-char* convertToDataTime(const struct tm *timeptr) {
+void statFileInit() {
+    if (!file_exist("stats.csv")) {
+        std::ofstream out;
+        out.open("stats.csv");
+        out << "unix_time" << "," << "unit_price" << "," << "units_per_block" << "," << "total_hash_power" << "," << "miners" << "," << "pools" << "," << "solo_miners" << "," << "revenue" << "," << "cost" << std::endl;
+    }
+}
+
+char* asctime_ct(const struct tm *timeptr) {
   static const char mon_name[][4] = {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
@@ -19,6 +27,12 @@ char* convertToDataTime(const struct tm *timeptr) {
   static char result[26];
   sprintf(result, "%.3s%3d, %d - %.2d:%.2d\n", mon_name[timeptr->tm_mon], timeptr->tm_mday, 1900 + timeptr->tm_year, timeptr->tm_hour, timeptr->tm_min);
   return result;
+}
+
+char* convertToDate_Time(long time) {
+    MiningParameters* MP = &MiningParameters::instance();
+    time += MP->getZeroTimeOffset();
+    return asctime_ct(std::localtime(&time));
 }
 
 double atLeastOneOccurencePerNTrial(double probability, int noOfTrials) {
@@ -37,8 +51,11 @@ double calculatePopulationGrowth(unsigned p, unsigned m, double k) {
     return k*(1-(double(p)/double(m)));
 }
 
-double sigmoidFunction(long x, long carryingCapacity, double range, double squeezeFactor) {
-    double e = 2.7182818285;
-    double y = (range / (1+pow(e, (1/squeezeFactor)*(x-carryingCapacity)))) - (range/2);
-    return y;
+
+double sigmoid(double variable, double MaxValue, double steepness, double midPoint, double offset) {
+    return (MaxValue / (1+exp(-1*steepness*(variable-midPoint)))) - offset;
+}
+
+double sigmoidDeravative(double variable, double MaxValue, double steepness, double midPoint) {
+    return (steepness*MaxValue*exp(steepness*(variable-midPoint)) / pow(exp(steepness*(variable-midPoint))+1, 2));
 }

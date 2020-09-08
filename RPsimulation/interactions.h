@@ -5,7 +5,7 @@
 
 class PoolMinerInteract {
 private:
-    MinerPopulation* MP = &MinerPopulation::instance(0);
+    MinerPopulation* MP = &MinerPopulation::instance();
     Pools* P = &Pools::instance();
     int poolMiners = 0;
 public:
@@ -17,11 +17,12 @@ class Game {
 private:
     Game();
     ~Game();
-    MinerPopulation* MP = &MinerPopulation::instance(0);
+    MinerPopulation* MP = &MinerPopulation::instance();
     Pools* P = &Pools::instance();
     MiningParameters* miningP = &MiningParameters::instance();
     VariableParameters* variableP = &VariableParameters::instance();
     PopulationParameters* populationP = &PopulationParameters::instance();
+    MasterTime* T = &MasterTime::instance();
     core::Random* gen = &core::Random::instance();
     void updateMinersPowerCost();
     Miner* winerMiner();
@@ -33,6 +34,7 @@ private:
     double currentCostRewardRatio;
     std::string file;
     Time lastRoundDuration;
+    Time lastGeneratedBlockTimestamp;
     Money lastRoundPowerCost;
     bool ReadGameFile();
     void WriteGameFile();
@@ -45,6 +47,7 @@ public:
         return instance;
     }
     void mine(int count=1);
+    Time lastGeneratedBlockTime() const;
 };
 
 

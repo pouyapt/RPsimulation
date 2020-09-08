@@ -3,14 +3,17 @@
 
 #include "parameters.h"
 
-bool is_file_exist(const char *fileName);
-char* convertToDataTime(const struct tm *timeptr);
+bool file_exist(const char *fileName);
+char* asctime_ct(const struct tm *timeptr);
+char* convertToDate_Time(long time);
 void databaseInit();
+void statFileInit();
 double round_(double var);
 double atLeastOneOccurencePerNTrial(double px, int n);
 int noOfRequiredTrials(double px, double targetP);
 double calculatePopulationGrowth(unsigned p, unsigned m, double k);
-double sigmoidFunction(long x, long carryingCapacity, double range, double squeezeFactor);
+double sigmoid(double variable, double MaxValue, double steepness, double midPoint, double offset);
+double sigmoidDeravative(double variable, double MaxValue, double steepness, double midPoint);
 
 class Money;
 class Time;
@@ -20,5 +23,6 @@ class PoolManager;
 class MinerPopulation;
 class Pools;
 class Game;
+class MasterTime;
 
 #endif /* foundation_hpp */

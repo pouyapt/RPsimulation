@@ -45,7 +45,7 @@
 		92BC1A0824B2A46A005E84CE /* BaseUnits.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BaseUnits.h; sourceTree = "<group>"; };
 		92BC1A0924B2A498005E84CE /* BaseUnits.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = BaseUnits.cpp; sourceTree = "<group>"; };
 		92F9EDA124E99402009ED6D9 /* BasicFunctions.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = BasicFunctions.cpp; sourceTree = "<group>"; };
-		92F9EDA224E99402009ED6D9 /* BasicFunctions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BasicFunctions.h; sourceTree = "<group>"; };
+		92F9EDA224E99402009ED6D9 /* BasicFunctions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BasicFunctions.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */

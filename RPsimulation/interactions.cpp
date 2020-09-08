@@ -22,6 +22,7 @@ void Game::updateVariableParameters() {
     variableP->unitPrice = unitPrice.convert();
     variableP->unitPerNewBlock = unitsPerBlock;
     variableP->currentCostRewardRatio = currentCostRewardRatio;
+    variableP->lastGeneratedBlockTime = lastGeneratedBlockTimestamp.convertToNumber();
 }
 
 Miner* Game::winerMiner() {
@@ -55,6 +56,7 @@ bool Game::ReadGameFile() {
     in >> totalMinedBlocks;
     in >> lastRoundDuration;
     in >> lastRoundPowerCost;
+    in >> lastGeneratedBlockTimestamp;
     in >> unitPrice;
     in >> unitsPerBlock;
     in.close();
@@ -69,6 +71,7 @@ void Game::WriteGameFile() {
     out << totalMinedBlocks << std::endl;
     out << lastRoundDuration.convertToNumber() << std::endl;
     out << lastRoundPowerCost.convert() << std::endl;
+    out << lastGeneratedBlockTimestamp << std::endl;
     out << unitPrice.convert() << std::endl;
     out << unitsPerBlock << std::endl;
     out.close();
@@ -79,22 +82,30 @@ void Game::updateMinersPowerCost() {
     lastRoundPowerCost = 0;
     Time time;
     time = gen->minig_time();
+    lastGeneratedBlockTimestamp = time + T->getCurrentTime();
+    MP->updatePopulation(time.convertToNumber());
     lastRoundDuration = time;
     for (int i=0; i<MP->size(); i++) {
         Money powerCost;
-        powerCost = (*MP)[i]->powerCostPerHour * time.toHour();
+        Time minedDuration;
+        if ((*MP)[i]->joinedTimestamp > T->getCurrentTime())
+            minedDuration = lastGeneratedBlockTimestamp - (*MP)[i]->joinedTimestamp;
+        else
+            minedDuration = time;
+        powerCost = (*MP)[i]->powerCostPerHour * minedDuration.toHour();
         totalNetworkCosts -= powerCost;
         lastRoundPowerCost += powerCost;
         (*MP)[i]->addCost(powerCost);
         (*MP)[i]->roundsPlayed++;
-        (*MP)[i]->minedTime += time;
+        (*MP)[i]->minedTime += minedDuration;
     }
+    T->addSecondsToCurrentTime(time.convertToNumber());
 }
 
 void Game::mine(int count) {
     Money reward;
-    reward = unitPrice * unitsPerBlock;
     for (int i=0; i<count; i++) {
+        reward = unitPrice * unitsPerBlock;
         updateMinersPowerCost();
         Miner* winner = winerMiner();
         if (winner->pool==NULL)
@@ -104,13 +115,14 @@ void Game::mine(int count) {
         winner->mined++;
         totalNetworkRevenue += reward;
         updateVariableParameters();
-        MP->updateList();
+        saveStats_csv();
+        MP->updateLosingMiners();
         updateUnitPrice();
     }
 }
 
 void Game::updateUnitPrice() {
-    currentCostRewardRatio = sigmoidFunction(MP->size(), populationP->zeroRevenuePopulation, 0.3, 4000);
+    currentCostRewardRatio = sigmoid(MP->size(), miningP->revenueFactor, miningP->revenueFunctionSteepness, populationP->minersCarryingCapacity*miningP->revenueFunctionZeroPoint, miningP->revenueFactor/2);
     Money aveCost;
     aveCost = lastRoundPowerCost.convert() / lastRoundDuration.convertToNumber();
     aveCost = aveCost * miningP->miningTimeMean;
@@ -120,6 +132,10 @@ void Game::updateUnitPrice() {
 void Game::generateInitialUnitPrice() {
     double p = double(MP->size()) * gen->errorFactor(2, 0.7, true) / unitsPerBlock;
     unitPrice = p;
+}
+
+Time Game::lastGeneratedBlockTime() const {
+    return lastGeneratedBlockTimestamp;
 }
 
 
