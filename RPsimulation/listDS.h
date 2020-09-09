@@ -139,14 +139,24 @@ public:
             return NULL;
         if (size_ == 1)
             return uninitialize();
-        data_type temp = last->data;
+        node* temp = last;
         last = last->left;
         last->right = first;
         first->left = last;
         size_--;
+        if (temp==savedA) {
+            savedA = last;
+            savedA_i = size_ - 1;
+        }
+        if (temp==savedB) {
+            savedB = last;
+            savedB_i = size_ - 1;
+        }
         current = last;
         current_i = size_ - 1;
-        return temp;
+        data_type data = temp->data;
+        delete temp;
+        return data;
     }
     
     data_type pop_front () {

@@ -86,7 +86,7 @@ public:
 //----------------------------------------------------------------------------------
 
 class Miner {
-private:
+public: // ========================================Change this====================================
     Miner(std::string option=" ");
     std::string firstName;
     std::string lastName;
@@ -228,7 +228,7 @@ protected:
 //--------------------------------------------------------------------------------
 
 class PoolManager: MiningPool {
-private:
+public: //========================================change this=================================
     PoolManager(std::string mode="default");
     std::string firstName;
     std::string lastName;

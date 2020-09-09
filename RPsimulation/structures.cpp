@@ -32,7 +32,7 @@ Miner* MinerPopulation::operator [](unsigned index) {
 
 void MinerPopulation::updateLosingMiners() {
     removeLostMiners();
-    //removeLosingMinersFromPools();
+    removeLosingMinersFromPools();
 }
 
 void MinerPopulation::updatePopulation(long time) {
@@ -82,6 +82,7 @@ void MinerPopulation::writeMinersData(std::ofstream &out) {
         out << mainList[i]->dishonestyFactor << std::endl;
         out << mainList[i]->powerConRate.convert() << std::endl;
         out << mainList[i]->mined << std::endl;
+        out << mainList[i]->taken << std::endl;
         out << mainList[i]->minedTime.convertToNumber() << std::endl;
         out << mainList[i]->poolIncome.convert() << std::endl;
         out << mainList[i]->powIncome.convert() << std::endl;
@@ -112,6 +113,7 @@ void MinerPopulation::readMinersData(std::ifstream &in, int size) {
         in >> newItem->dishonestyFactor;
         in >> newItem->powerConRate;
         in >> newItem->mined;
+        in >> newItem->taken;
         in >> newItem->minedTime;
         in >> newItem->poolIncome;
         in >> newItem->powIncome;
@@ -284,7 +286,7 @@ void MinerPopulation::addMiner(long time) {
 
 void MinerPopulation::deleteMiner(unsigned index) {
     totalHashPower_ -= mainList[index]->getMiningPower();
-    if (mainList[index]->pool!=NULL)
+    if (mainList[index]!=NULL)
         mainList[index]->pool->releaseMiner(mainList[index]);
     removedList.push_back(mainList.pop(index));
     updateVariableParameters();
@@ -310,15 +312,14 @@ void MinerPopulation::saveOldOrder() {
     }
 }
 
-int MinerPopulation::removeLostMiners() {
-    int count = 0;
-    for (auto i=0; i<mainList.size(); i++) {
-        if (mainList[i]->isBellowLossTolerance()) {
+void MinerPopulation::removeLostMiners() {
+    int i=0;
+    while (i < mainList.size()) {
+        if (mainList[i]->isBellowLossTolerance())
             deleteMiner(i);
-            count++;
-        }
+        else
+            i++;
     }
-    return count;
 }
 
 void MinerPopulation::removeLosingMinersFromPools() {
@@ -471,3 +472,4 @@ void Pools::saveIndex() {
     for (int i=0; i<poolList.size(); i++)
         poolList[i]->index = i;
 }
+

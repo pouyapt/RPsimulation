@@ -176,6 +176,8 @@ void Miner::removePoolManager(PoolManager* poolManager) {
         pool = NULL;
         taken = false;
     }
+    else
+        std::cout << "Miner::removePoolManager: Pool Manger was not found" << std::endl;
 }
 
 void Miner::initialize() {
@@ -483,14 +485,14 @@ void MiningPool::addMiner(Miner* miner) {
 }
 
 bool MiningPool::removeMiner(Miner* miner) {
-    for (int i=0; i<miners.size(); i++) {
+    for (auto i=0; i<miners.size(); i++) {
         if (miner==miners[i]) {
             TotalhashPower -= miner->getMiningPower();
             miners.pop(i);
             return true;
         }
     }
-    std::cout << "removeMiner: Miner was not found" << std::endl;
+    std::cout << "MiningPool::removeMiner: Miner was not found" << std::endl;
     return false;
 }
 
@@ -599,7 +601,7 @@ void PoolManager::receiveReward(Money amount, Miner* miner) {
 }
 
 bool PoolManager::pickMiner(Miner* miner) {
-    if (miner->isTaken())
+    if (miner->pool!=NULL)
         return false;
     MiningPool::addMiner(miner);
     miner->savePoolManager(this);
@@ -651,7 +653,7 @@ void PoolManager::print() {
     std::cout << "POW Award:\t\t" << MiningPool::powReward << std::endl;
     std::cout << "Miners C:\t\t" << size() << std::endl;
     std::cout << "Hash:\t\t\t" << poolHashPower() << std::endl;
-    std::cout << "Hash Share:\t\t" << (poolHashPower()/variableP->getCurrentTotalHashPower())*100 << "%" << std::endl;
+    //std::cout << "Hash Share:\t\t" << (poolHashPower()/variableP->getCurrentTotalHashPower())*100 << "%" << std::endl;
     std::cout << "Hash Share:\t\t" << MiningPool::hashSizeProportion*100 << "%" << std::endl;
     std::cout << "HashPower:\t\t" << poolHashPower() << std::endl;
     std::cout << "All Profit:\t\t" << profit << std::endl;

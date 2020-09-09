@@ -32,7 +32,7 @@ private:
     core::Random* gen = &core::Random::instance();
     VariableParameters* variableP = &VariableParameters::instance();
     MasterTime* T = &MasterTime::instance();
-    int removeLostMiners();
+    void removeLostMiners();
     void removeLosingMinersFromPools();
     int calculateNewPopulation();
 public:
