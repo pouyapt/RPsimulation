@@ -27,6 +27,7 @@ struct machine {
 class SineWaveModulator {
 private:
     SineWaveModulator(double maxDistance, int decimals, int precision, int minPeriod, int maxPeriod);
+    SineWaveModulator() {}
     VirtualTime* V = &VirtualTime::instance();
     core::Random* gen = &core::Random::instance();
     double apply();
@@ -35,14 +36,14 @@ private:
     int maxD;
     int minP;
     int maxP;
-    double mainFunction(long x, long a);
-    double calculateNextExterma();
     long generatedTime;
     long nextExterma;
     double currentRate;
     double currentDistance;
     double offset = 0;
     double lastCalculation = 0;
+    double mainFunction(long x, long a);
+    double calculateNextExterma();
     bool generateAttributes(long time);
 public:
     friend class MasterTime;
@@ -52,11 +53,17 @@ public:
 
 class MasterTime {
 private:
-    MasterTime() {}
+    MasterTime();
     ~MasterTime();
     VirtualTime* VT = &VirtualTime::instance();
     std::vector<SineWaveModulator*> M;
+    //std::map<std::string, SineWaveModulator*> M;
+    std::string file = "Data/modulators.db";
     void applyModulators();
+    bool readFile();
+    void writeFile();
+    bool readModulatorData();
+    void writeModulatorData();
 public:
     static MasterTime& instance() {
         static MasterTime instance;
@@ -86,15 +93,14 @@ public:
 //----------------------------------------------------------------------------------
 
 class Miner {
-public: // ========================================Change this====================================
+private:
     Miner(std::string option=" ");
     std::string firstName;
     std::string lastName;
     long idValue;
     std::time_t joinedTimestamp;
     double reputation;
-    int miningPower;
-    int dMiningPower;
+    int hashPower;
     int detectedViolations;
     int allViolations;
     Money powerCostPerHour;
@@ -122,7 +128,7 @@ public: // ========================================Change this==================
     MasterTime* T = &MasterTime::instance();
     core::Random* gen = &core::Random::instance();
     MiningParameters* miningP = &MiningParameters::instance();
-    VariableParameters* variableP = &VariableParameters::instance();
+    Stats* variableP = &Stats::instance();
     core::list<poolEvaluation> invitations;
     void processInvitation();
     Money estimatePoolProfit(PoolManager* PM);
@@ -146,7 +152,7 @@ public:
     long getID();
     long getJoinedTimestamp();
     double getReputation();
-    int getMiningPower(std::string mode="real");
+    int getHashPower();
     Money getPowerCostPerHour();
     int getDetectedViolations();
     int roundPlayed();
@@ -208,7 +214,7 @@ private:
     core::Random* gen = &core::Random::instance();
     void initialize();
 protected:
-    unsigned int TotalhashPower;
+    unsigned int totalHashPower;
     double poolFee;
     double powReward;
     double hashSizeProportion;
@@ -228,7 +234,7 @@ protected:
 //--------------------------------------------------------------------------------
 
 class PoolManager: MiningPool {
-public: //========================================change this=================================
+private:
     PoolManager(std::string mode="default");
     std::string firstName;
     std::string lastName;
@@ -249,7 +255,7 @@ public: //========================================change this===================
     std::time_t establishedTime;
     core::list<providedMiners> candidateMinersList;
     MiningParameters* miningP = &MiningParameters::instance();
-    VariableParameters* variableP = &VariableParameters::instance();
+    Stats* variableP = &Stats::instance();
 public:
     friend class Pools;
     PoolManager operator=(const PoolManager & orig) = delete;

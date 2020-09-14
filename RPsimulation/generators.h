@@ -273,6 +273,15 @@ public:
         }
         return a;
     }
+    double poolExitTolerance() {
+        std::mt19937 gen{ran()};
+        std::normal_distribution<float> d(entityP->leavePoolBeforeLooseFactor("mean"), entityP->leavePoolBeforeLooseFactor("std"));
+        double a = 0;
+        do
+            a = d(gen);
+        while (a<entityP->leavePoolBeforeLooseFactor("min") || a>=entityP->leavePoolBeforeLooseFactor("max"));
+        return a;
+    }
 };
 
 }

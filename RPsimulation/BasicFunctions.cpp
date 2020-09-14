@@ -29,10 +29,8 @@ char* asctime_ct(const struct tm *timeptr) {
   return result;
 }
 
-char* convertToDate_Time(long time) {
-    MiningParameters* MP = &MiningParameters::instance();
-    time += MP->getZeroTimeOffset();
-    return asctime_ct(std::localtime(&time));
+double expectedValue(double mean, double std) {
+    return 0;
 }
 
 double atLeastOneOccurencePerNTrial(double probability, int noOfTrials) {
@@ -57,5 +55,5 @@ double sigmoid(double variable, double MaxValue, double steepness, double midPoi
 }
 
 double sigmoidDeravative(double variable, double MaxValue, double steepness, double midPoint) {
-    return (steepness*MaxValue*exp(steepness*(variable-midPoint)) / pow(exp(steepness*(variable-midPoint))+1, 2));
+    return (steepness*MaxValue*exp(steepness*(variable-midPoint)) / pow(1+exp(steepness*(variable-midPoint)), 2));
 }

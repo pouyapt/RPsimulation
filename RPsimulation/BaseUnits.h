@@ -46,7 +46,7 @@ public:
 
 class VirtualTime {
 private:
-    unsigned long last;
+    unsigned long last = 0;
     MiningParameters* miningP = &MiningParameters::instance();
     void writeTime();
     bool readTime();
@@ -60,6 +60,7 @@ public:
     long getCurrentTime();
     long addSecondsToCurrentTime(long seconds);
     long addHoursToCurrentTime(double hours);
+    friend class MasterTime;
 };
 
 
@@ -116,7 +117,53 @@ public:
 
 //----------------------------------------------------------------------------------
 
-void printStats();
-void saveStats_csv();
+class Stats {
+public:
+    static Stats& instance() {
+        static Stats instance;
+        return instance;
+    }
+    Stats operator=(const Stats & orig) = delete;
+    friend class MinerPopulation;
+    friend class Pools;
+    friend class Game;
+    VirtualTime* T = &VirtualTime::instance();
+    void printCurrentStats();
+    void saveSnapShot();
+    void addNewStatsToCsvFile();
+    long getCurrentTotalHashPower();
+    long getCurentMinersPopulation();
+    long getCurrentPoolsPopulation();
+    Money getUnitPrice();
+    double getUnitPerNewBlock();
+    void updateNumberOfPoolMiners(int i);
+private:
+    Stats() {}
+    ~Stats();
+    struct snapShot {
+        long time = 0;
+        Money unitPrice = 0;
+        double unitPerNewBlock = 0;
+        long totalHashPower = 0;
+        long minersPopulation = 0;
+        long inactiveMinersPopulation = 0;
+        long poolsPopulation = 0;
+        double costRewardRatio = 0;
+        int numberOfPoolMiners = 0;
+        int MinersWithAtLeastOneBlock = 0;
+        int highestMinerReputation = 0;
+        int lowestMinerReputation = 0;
+        int numberOfAllViolations = 0;
+        int numberOfDetectedViolations = 0;
+        Money totalRevenue = 0;
+        Money totalCost = 0;
+        int totalMinedBlocks = 0;
+        long lastGeneratedBlockTime = 0;
+    };
+    snapShot current;
+    std::vector<snapShot> snapShots;
+};
+
+//----------------------------------------------------------------------------------
 
 #endif /* foundation_h */

@@ -1,15 +1,7 @@
 #ifndef parameters_hpp
 #define parameters_hpp
 
-#include <iostream>
-#include <vector>
-#include <sstream>
-#include <fstream>
-#include <string>
-#include <random>
-#include <chrono>
-#include <thread>
-#include <cmath>
+#include "BasicFunctions.h"
 
 class EntityParameters {
 private:
@@ -41,6 +33,10 @@ private:
     double probabilityConfidenceMax = 0.95;
     double lossToleranceFactorMin = 0.1;
     double lossToleranceFactorMax = 0.35;
+    double leavePoolBeforeLooseFactorMean = 0.8;
+    double leavePoolBeforeLooseFactorStd = 0.1;
+    double leavePoolBeforeLooseFactorMin = 0.6;
+    double leavePoolBeforeLooseFactorMax = 0.98;
 public:
     static EntityParameters& instance() {
         static EntityParameters instance;
@@ -55,20 +51,26 @@ public:
     double getPoolSize(std::string parameter);
     double getProbabilityConfidence(std::string parameter);
     double lossToleranceFactor(std::string parameter);
+    double leavePoolBeforeLooseFactor(std::string parameter);
 };
 
 //----------------------------------------------------------------------------------
 
 class MiningParameters {
 private:
-    long zeroTimeOffset = 1000228870;
-    int miningTimeMean = 600;                   // Average mining time for a New Block
-    int miningTimeStd = 300;
+    MiningParameters();
+    ~MiningParameters();
+    long zeroTimeOffset = 1000228870;       // Doesn't affect the program's internal time. Used only to show the time to the user.
+    int miningTimeMean = 600;               // Average mining time for a New Block
+    int miningTimeStd = 300;                // Standard Diviation for time for a New Block
     double minerMachinePricePerTh = 35;
-    double revenueFactor = 0.3;
-    double revenueFunctionSteepness = -0.0002;
-    double revenueFunctionZeroPoint = 0.7;
-    MiningParameters() {}
+    double revenueRangeFactor = 0.3;        // The max range of ratio between rewards and costs (sigmoid Function parameter)
+    double revenueFunctionSteepness = 0;    // Steepness (sigmoid Function parameter)
+    double revenueFunctionZeroPoint = 0.78; // This value is multiplied by Maximum Population
+    std::string file = "Data/mining_parameters.db";
+    double calculateSteepness();
+    bool readFiles();
+    void writeFiles();
 public:
     static MiningParameters& instance() {
         static MiningParameters instance;
@@ -76,6 +78,8 @@ public:
     }
     MiningParameters operator=(const MiningParameters & orig) = delete;
     friend class Game;
+    friend double costRewardRatio(long population);
+    friend double populationGrowthPhase2(long population);
     int getAverageMiningTime();
     double getMiningTime(std::string parameter);
     unsigned long getZeroTimeOffset();
@@ -86,18 +90,29 @@ public:
 
 class PopulationParameters {
 private:
-    unsigned minersCarryingCapacity = 85256;
-    long halfMinersCarryingCapacityTime = 32072000;
-    double populationFunctionSteepness = 0.0000002;
+    unsigned maximumMiners = 86000;                     //Maximum Population (numerator of Sigmoid function)
+    long halfMaximumMinersTime = 32100000;              // The required duration to reach the half of maximum population
+    double startingPopulationToMaximumRatio = 0.002;    // population at time 0 divided by the maximum Population
     unsigned defaultNumberOfPool = 32;
-    PopulationParameters() {}
+    double populationFunctionSteepness = 0;             // Calculates by the program
+    double maxPopulationGrowth = 0;
+    std::string file = "Data/population_parameters.db";
+    PopulationParameters();
+    ~PopulationParameters();
+    double calculateSteepness();
+    bool readFiles();
+    void writeFiles();
 public:
     static PopulationParameters& instance() {
         static PopulationParameters instance;
         return instance;
     }
     PopulationParameters operator=(const PopulationParameters & orig) = delete;
-    friend double calculatePopulationGrowth();
+    friend double populationEstimate(long time);
+    friend double populationGrowthPhase1(long seconds);
+    friend double costRewardRatio(long population);
+    friend double populationGrowthPhase2(long population);
+    friend class MiningParameters;
     friend class MinerPopulation;
     friend class Pools;
     friend class Game;
@@ -105,44 +120,12 @@ public:
 
 //----------------------------------------------------------------------------------
 
-class VariableParameters {
-public:
-    static VariableParameters& instance() {
-        static VariableParameters instance;
-        return instance;
-    }
-    VariableParameters operator=(const VariableParameters & orig) = delete;
-    friend class MinerPopulation;
-    friend class Pools;
-    friend class Game;
-    friend void printStats();
-    friend void saveStats_csv();
-    long getCurrentTotalHashPower();
-    long getCurentMinersPopulation();
-    long getCurrentPoolsPopulation();
-    double getUnitPrice();
-    double getUnitPerNewBlock();
-    void updateNumberOfPoolMiners(int i);
-private:
-    VariableParameters() {}
-    double unitPrice = 0;
-    double unitPerNewBlock = 0;
-    long currentTotalHashPower = 0;
-    long currentMinersPopulation = 0;
-    long currentInactiveMinersPopulation = 0;
-    long currentPoolsPopulation = 0;
-    double currentCostRewardRatio = 0;
-    int numberOfPoolMiners = 0;
-    int MinersWithAtLeastOneBlock = 0;
-    int currentHighestMinerReputation = 0;
-    int currentLowestMinerReputation = 0;
-    int numberOfAllViolations = 0;
-    int numberOfDetectedViolations = 0;
-    double totalRevenue = 0;
-    double totalCost = 0;
-    int totalMinedBlocks = 0;
-    long lastGeneratedBlockTime = 0;
-};
+char* convertToDate_Time(long time);
+double populationEstimate(long time);
+double populationGrowthPhase1(long seconds);
+double costRewardRatio(long population);
+//double populationGrowthPostMaximum(double rewardCostRatio);
+double populationGrowthPhase2(long population);
 
 //----------------------------------------------------------------------------------
 

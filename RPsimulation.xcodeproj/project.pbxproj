@@ -79,10 +79,10 @@
 			isa = PBXGroup;
 			children = (
 				9254D44824F1B00A00F1D963 /* MinerMachines.rtf */,
-				9279C8CF24D8BF39007197D4 /* parameters.h */,
-				9279C8CE24D8BF39007197D4 /* parameters.cpp */,
 				92F9EDA224E99402009ED6D9 /* BasicFunctions.h */,
 				92F9EDA124E99402009ED6D9 /* BasicFunctions.cpp */,
+				9279C8CF24D8BF39007197D4 /* parameters.h */,
+				9279C8CE24D8BF39007197D4 /* parameters.cpp */,
 				92ADCBFD2448E3A700BC2F59 /* listDS.h */,
 				92BC1A0824B2A46A005E84CE /* BaseUnits.h */,
 				92BC1A0924B2A498005E84CE /* BaseUnits.cpp */,

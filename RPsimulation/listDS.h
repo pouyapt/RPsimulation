@@ -1,7 +1,7 @@
 #ifndef listDS_h
 #define listDS_h
 
-#include "BasicFunctions.h"
+#include "parameters.h"
 
 namespace core {
 
@@ -181,7 +181,6 @@ public:
         size_--;
         current = first;
         current_i = 0;
-        save_current_node();
         return temp_data;
     }
     

@@ -5,7 +5,7 @@ MinerPopulation::MinerPopulation() {
     databaseInit();
     int population0 = 0;
     if (!readPopulationData())
-        population0 = calculateNewPopulation();
+        population0 = calculateInitialPopulation();
     updateVariableParameters();
     for (auto i=0; i<population0; i++)
         addMiner();
@@ -30,22 +30,6 @@ Miner* MinerPopulation::operator [](unsigned index) {
     return mainList[index];
 }
 
-void MinerPopulation::updateLosingMiners() {
-    removeLostMiners();
-    removeLosingMinersFromPools();
-}
-
-void MinerPopulation::updatePopulation(long time) {
-    for (auto i=1; i<time; i++) {
-        population += sigmoidDeravative(T->getCurrentTime()+i, populationP->minersCarryingCapacity, populationP->populationFunctionSteepness, populationP->halfMinersCarryingCapacityTime);
-    }
-    while (population>1) {
-        long joinedTime = gen->random_uniform_long(T->getCurrentTime(), T->getCurrentTime()+time);
-        addMiner(joinedTime);
-        population--;
-    }
-}
-
 long MinerPopulation::totalHashPower() {
     return totalHashPower_;
 }
@@ -63,9 +47,9 @@ int& MinerPopulation::getDetectedViolationsCount() {
 }
 
 void MinerPopulation::updateVariableParameters() {
-    variableP->currentMinersPopulation = mainList.size();
-    variableP->currentTotalHashPower = totalHashPower_;
-    variableP->currentInactiveMinersPopulation = removedMinersCount + removedList.size();
+    variableP->current.minersPopulation = mainList.size();
+    variableP->current.totalHashPower = totalHashPower_;
+    variableP->current.inactiveMinersPopulation = removedMinersCount + removedList.size();
 }
 
 void MinerPopulation::writeMinersData(std::ofstream &out) {
@@ -74,7 +58,7 @@ void MinerPopulation::writeMinersData(std::ofstream &out) {
         out << mainList[i]->lastName << std::endl;
         out << mainList[i]->idValue << std::endl;
         out << mainList[i]->joinedTimestamp << std::endl;
-        out << mainList[i]->miningPower << std::endl;
+        out << mainList[i]->hashPower << std::endl;
         out << mainList[i]->m.name << std::endl;
         out << mainList[i]->m.hashRate << std::endl;
         out << mainList[i]->m.wattage << std::endl;
@@ -82,7 +66,6 @@ void MinerPopulation::writeMinersData(std::ofstream &out) {
         out << mainList[i]->dishonestyFactor << std::endl;
         out << mainList[i]->powerConRate.convert() << std::endl;
         out << mainList[i]->mined << std::endl;
-        out << mainList[i]->taken << std::endl;
         out << mainList[i]->minedTime.convertToNumber() << std::endl;
         out << mainList[i]->poolIncome.convert() << std::endl;
         out << mainList[i]->powIncome.convert() << std::endl;
@@ -105,7 +88,7 @@ void MinerPopulation::readMinersData(std::ifstream &in, int size) {
         in >> newItem->lastName;
         in >> newItem->idValue;
         in >> newItem->joinedTimestamp;
-        in >> newItem->miningPower;
+        in >> newItem->hashPower;
         in >> newItem->m.name;
         in >> newItem->m.hashRate;
         in >> newItem->m.wattage;
@@ -113,7 +96,6 @@ void MinerPopulation::readMinersData(std::ifstream &in, int size) {
         in >> newItem->dishonestyFactor;
         in >> newItem->powerConRate;
         in >> newItem->mined;
-        in >> newItem->taken;
         in >> newItem->minedTime;
         in >> newItem->poolIncome;
         in >> newItem->powIncome;
@@ -139,7 +121,8 @@ void MinerPopulation::writePopulationData () {
     pd << allViolationsCount << std::endl;
     pd << detectedViolationsCount << std::endl;
     pd << population << std::endl;
-    pd << variableP->numberOfPoolMiners << std::endl;
+    pd << populationStage << std::endl;
+    pd << variableP->current.numberOfPoolMiners << std::endl;
     pd.close();
     std::ofstream md;
     md.open(minersDataFile);
@@ -162,8 +145,11 @@ bool MinerPopulation::readPopulationData () {
     pd >> allViolationsCount;
     pd >> detectedViolationsCount;
     pd >> population;
-    pd >> variableP->numberOfPoolMiners;
+    pd >> populationStage;
+    pd >> variableP->current.numberOfPoolMiners;
     pd.close();
+    if (size==0)
+        return false;
     std::ifstream md;
     md.open(minersDataFile);
     if (md.fail()) {
@@ -185,7 +171,7 @@ void MinerPopulation::writeRemovedMiners() {
             uidlFile << removedList[i]->lastName << std::endl;
             uidlFile << removedList[i]->idValue << std::endl;
             uidlFile << removedList[i]->joinedTimestamp << std::endl;
-            uidlFile << removedList[i]->miningPower << std::endl;
+            uidlFile << removedList[i]->hashPower << std::endl;
             uidlFile << removedList[i]->m.name << std::endl;
             uidlFile << removedList[i]->m.hashRate << std::endl;
             uidlFile << removedList[i]->m.wattage << std::endl;
@@ -280,15 +266,16 @@ void MinerPopulation::addMiner(long time) {
         newMiner->joinedTimestamp = time;
     mainList.push_back(newMiner);
     newMiner->index = unsigned(mainList.size());
-    totalHashPower_ += newMiner->getMiningPower();
+    totalHashPower_ += newMiner->getHashPower();
     updateVariableParameters();
 }
 
 void MinerPopulation::deleteMiner(unsigned index) {
-    totalHashPower_ -= mainList[index]->getMiningPower();
-    if (mainList[index]!=NULL)
-        mainList[index]->pool->releaseMiner(mainList[index]);
-    removedList.push_back(mainList.pop(index));
+    if (mainList[index]->isTaken())
+        removeMinerFromPool(mainList[index]);
+    Miner* temp = mainList.pop(index);
+    removedList.push_back(temp);
+    totalHashPower_ -= temp->getHashPower();
     updateVariableParameters();
 }
 
@@ -312,28 +299,10 @@ void MinerPopulation::saveOldOrder() {
     }
 }
 
-void MinerPopulation::removeLostMiners() {
-    int i=0;
-    while (i < mainList.size()) {
-        if (mainList[i]->isBellowLossTolerance())
-            deleteMiner(i);
-        else
-            i++;
-    }
-}
-
-void MinerPopulation::removeLosingMinersFromPools() {
-    for (auto i=0; i<mainList.size(); i++) {
-        if (mainList[i]->pool!=NULL && mainList[i]->needsToExitPool()) {
-            mainList[i]->pool->releaseMiner(mainList[i]);
-        }
-    }
-}
-
 int MinerPopulation::topHashPower() {
     int h=0;
     for (auto i=0; i<mainList.size(); i++)
-        mainList[i]->miningPower > h ? h = mainList[i]->miningPower : false;
+        mainList[i]->hashPower > h ? h = mainList[i]->hashPower : false;
     return h;
 }
 
@@ -351,9 +320,77 @@ int MinerPopulation::MinersWithProfit() {
     return count;
 }
 
-int MinerPopulation::calculateNewPopulation() {
-    long expectedP = sigmoid(T->getCurrentTime(), populationP->minersCarryingCapacity, populationP->populationFunctionSteepness, populationP->halfMinersCarryingCapacityTime, 0);
+void MinerPopulation::processPopulationChange(long time, const Game& game) {
+    calculateNumberOfNewMiners(time);
+    processMinersAddition(time);
+    processMinersRemoval();
+}
+
+void MinerPopulation::calculateNumberOfNewMiners(long time) {
+    if (populationStage==false) {
+        double growth = 0;
+        for (auto i=1; i<time; i++) {
+            growth = populationGrowthPhase1(T->getCurrentTime()+i);
+            population += growth;
+        }
+        if (T->getCurrentTime() > populationP->halfMaximumMinersTime && growth < populationP->maxPopulationGrowth/2)
+            populationStage = true;
+    }
+    else {
+        for (auto i=1; i<time; i++) {
+            population += populationGrowthPhase2(mainList.size());
+        }
+    }
+}
+
+void MinerPopulation::processMinersAddition(long time) {
+    while (population > 1) {
+        long joinedTime = gen->random_uniform_long(T->getCurrentTime(), T->getCurrentTime()+time);
+        addMiner(joinedTime);
+        population--;
+    }
+}
+
+int MinerPopulation::calculateInitialPopulation() {
+    long expectedP = sigmoid(T->getCurrentTime(), populationP->maximumMiners, populationP->populationFunctionSteepness, populationP->halfMaximumMinersTime, 0);
     return int(expectedP - mainList.size());
+}
+
+void MinerPopulation::processMinersRemoval() {
+    if (removeLostMinersCountdown==0) {
+        removeLostMiners();
+        removeLostMinersCountdown = int(gen->random_uniform_long(80, 300));
+    }
+    else {
+        removeLostMinersCountdown--;
+    }
+    if (removeLosingMinersCountdown==0) {
+        removeLosingMinersFromPools();
+        removeLosingMinersCountdown = int(gen->random_uniform_long(80, 300));
+    }
+    else
+        removeLosingMinersCountdown--;
+}
+
+void MinerPopulation::removeLostMiners() {
+    int i=0;
+    while (i < mainList.size()) {
+        if (mainList[i]->isBellowLossTolerance())
+            deleteMiner(i);
+        else
+            i++;
+    }
+}
+
+void MinerPopulation::removeLosingMinersFromPools() {
+    for (auto i=0; i<mainList.size(); i++) {
+        if (mainList[i]->pool!=NULL && mainList[i]->needsToExitPool())
+            removeMinerFromPool(mainList[i]);
+    }
+}
+
+void MinerPopulation::removeMinerFromPool(Miner* miner) {
+        miner->pool->releaseMiner(miner);
 }
 
 //----------------------------------------------------------------------------------
@@ -403,7 +440,7 @@ void Pools::print() {
 }
 
 void Pools::updateVariableP() {
-    variableP->currentPoolsPopulation = poolList.size();
+    variableP->current.poolsPopulation = poolList.size();
 }
 
 void Pools::writePools() {
@@ -419,7 +456,7 @@ void Pools::writePools() {
         out << poolList[i]->mined << std::endl;
         out << poolList[i]->MiningPool::poolName() << std::endl;
         out << poolList[i]->MiningPool::poolFee << std::endl;
-        out << poolList[i]->TotalhashPower << std::endl;
+        out << poolList[i]->totalHashPower << std::endl;
         out << poolList[i]->MiningPool::grossIncome.convert() << std::endl;
         out << poolList[i]->size() << std::endl;
         for (auto j=0; j<poolList[i]->size(); j++) {
@@ -452,7 +489,7 @@ bool Pools::readPools () {
         in >> newPM->mined;
         in >> newPM->MiningPool::poolName();
         in >> newPM->MiningPool::poolFee;
-        in >> newPM->TotalhashPower;
+        in >> newPM->totalHashPower;
         in >> newPM->MiningPool::grossIncome;
         in >> sizeMiners;
         while (sizeMiners) {
@@ -472,4 +509,3 @@ void Pools::saveIndex() {
     for (int i=0; i<poolList.size(); i++)
         poolList[i]->index = i;
 }
-
