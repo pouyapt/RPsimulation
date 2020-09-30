@@ -3,15 +3,27 @@
 
 #include "structures.h"
 
-class PoolMinerInteract {
-private:
+class PoolJoin {
+public:
+    static PoolJoin& instance() {
+        static PoolJoin instance;
+        return instance;
+    }
+    void run();
+//private:
+    PoolJoin();
+    ~PoolJoin();
     MinerPopulation* MP = &MinerPopulation::instance();
     Pools* P = &Pools::instance();
-    int poolMiners = 0;
-public:
-    PoolMinerInteract();
+    core::Random* gen = &core::Random::instance();
+    Stats* stats = &Stats::instance();
+    void provideMiners();
+    void sendInvitations();
+    void processInvitations();
+    void clearCandidateMinersList();
 };
 
+//--------------------------------------------------------------------------------
 
 class Game {
 private:
@@ -42,8 +54,9 @@ private:
     void WriteGameFile();
     void updateVariableParameters();
     void updateUnitPrice();
+    void updateModulatedUnitPrice();
     void generateInitialUnitPrice();
-    void modulateUnitPrice();
+    double costRewardRatio(long population);
 public:
     static Game& instance() {
         static Game instance;

@@ -1,14 +1,60 @@
 #include "interactions.h"
 
 
+PoolJoin::PoolJoin() {
+    
+}
+
+PoolJoin::~PoolJoin() {
+    
+}
+
+void PoolJoin::provideMiners() {
+    P->shuffle();
+    for (auto i=0; i<P->size(); i++) {
+        int n = int(gen->random_uniform_long(MP->size() / 8, MP->size() / 4));
+        for (auto j=0; j<n; j++) {
+            int m = gen->select_random_index(0, MP->size()-1);
+            if ((*MP)[m]->isInPool()==false) {
+                (*P)[i]->receiveCandidateMiner((*MP)[m]);
+            }
+        }
+    }
+}
+
+void PoolJoin::sendInvitations() {
+    for (auto i=0; i<P->size(); i++)
+        (*P)[i]->processCandidateMiners();
+}
+
+void PoolJoin::processInvitations() {
+    for (auto i=0; i<MP->size(); i++)
+        (*MP)[i]->processInvitation();
+}
+
+void PoolJoin::clearCandidateMinersList() {
+    for (auto i=0; i<P->size(); i++)
+        (*P)[i]->clearMinersCandidateList();
+}
+
+void PoolJoin::run() {
+    provideMiners();
+    sendInvitations();
+    processInvitations();
+    clearCandidateMinersList();
+}
+
+//----------------------------------------------------------------------------------
+
 Game::Game() {
     if (!ReadGameFile()) {
         totalNetworkRevenue = 0;
         totalNetworkCosts = 0;
+        T->createNewModulator(0.12, 55000, 250000, "priceModulator");
+        T->createNewModulator(0.15, 800000, 2600000, "revenueZeroPoint");
         generateInitialUnitPrice();
-        priceModulatorIndex = T->createNewModulator(0.1, 2, 3, 43000, 259200);
+        updateModulatedUnitPrice();
     }
-    modulateUnitPrice();
     updateVariableParameters();
 }
 
@@ -30,6 +76,7 @@ bool Game::ReadGameFile() {
     in >> lastRoundPowerCost;
     in >> lastGeneratedBlockTimestamp;
     in >> unitPrice;
+    in >> modulatedUnitPrice;
     in >> unitsPerBlock;
     in >> priceModulatorIndex;
     in.close();
@@ -46,6 +93,7 @@ void Game::WriteGameFile() {
     out << lastRoundPowerCost.convert() << std::endl;
     out << lastGeneratedBlockTimestamp.convertToNumber() << std::endl;
     out << unitPrice.convert() << std::endl;
+    out << modulatedUnitPrice.convert() << std::endl;
     out << unitsPerBlock << std::endl;
     out << priceModulatorIndex << std::endl;
     out.close();
@@ -109,7 +157,7 @@ void Game::mine() {
     reward = modulatedUnitPrice * unitsPerBlock;
     updateMinersPowerCost();
     Miner* winner = winerMiner();
-    if (winner->isTaken()==false)
+    if (winner->isInPool()==false)
         winner->receivePowRewards(reward);
     else
         winner->pool->receiveReward(reward, winner);
@@ -117,6 +165,7 @@ void Game::mine() {
     totalNetworkRevenue += reward;
     updateVariableParameters();
     updateUnitPrice();
+    updateModulatedUnitPrice();
     variableP->saveSnapShot();
 }
 
@@ -126,13 +175,14 @@ void Game::updateUnitPrice() {
     aveCost = lastRoundPowerCost.convert() / lastRoundDuration.convertToNumber();
     aveCost = aveCost * miningP->miningTimeMean;
     unitPrice = (aveCost.convert() / unitsPerBlock) * (currentCostRewardRatio + 1);
-    modulateUnitPrice();
-    std::cout << unitPrice;
-    std::cout << " --> " << modulatedUnitPrice << "\n";
+}
+
+void Game::updateModulatedUnitPrice() {
+    modulatedUnitPrice = unitPrice.convert() + (unitPrice.convert()*T->getModulatorValue("priceModulator"));
 }
 
 void Game::generateInitialUnitPrice() {
-    double p = double(MP->size()) * gen->errorFactor(2, 0.7, true) / unitsPerBlock;
+    double p = double(MP->size()) * gen->errorFactor(2, 0.3, true) / unitsPerBlock;
     unitPrice = p;
 }
 
@@ -140,10 +190,10 @@ Time Game::lastGeneratedBlockTime() const {
     return lastGeneratedBlockTimestamp;
 }
 
-void Game::modulateUnitPrice() {
-    modulatedUnitPrice = unitPrice.convert() + (unitPrice.convert()*T->getModulatorValue(priceModulatorIndex));
+double Game::costRewardRatio(long population) {
+    double modulatedRevenueZeroPoint = miningP->revenueFunctionZeroPoint + (miningP->revenueFunctionZeroPoint*T->getModulatorValue("revenueZeroPoint"));
+    return sigmoid(population, miningP->revenueRangeFactor, miningP->revenueFunctionSteepness, populationP->maximumMiners*modulatedRevenueZeroPoint, miningP->revenueRangeFactor/2);
 }
-
 
 
 

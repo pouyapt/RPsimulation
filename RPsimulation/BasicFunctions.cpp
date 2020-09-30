@@ -38,6 +38,8 @@ double atLeastOneOccurencePerNTrial(double probability, int noOfTrials) {
 }
 
 int noOfRequiredTrials(double probability, double targetProbability) {
+    if (probability<=0.0001)
+        return INT_MAX;
     int n = 0;
     double p = 0;
     while (p<targetProbability)

@@ -38,7 +38,7 @@ public:
     }
     
     list (unsigned size__) {
-        set();
+        list();
         for (auto i=0; i<size__; i++)
         {
             add_node_back();
@@ -57,6 +57,10 @@ public:
             push_back(temp->data);
             temp = temp->right;
         }
+    }
+    
+    list (list && other) {
+        grab_and_add(other);
     }
     
     void clear () {
@@ -315,47 +319,36 @@ public:
         dest.reset_saved();
     }
     
-    void split_in_half (list & secHalf) {
-        if (size_<=1 || objectID==secHalf.objectID)
-            return;
-        secHalf.clear();
-        long midPoint = size_-(size_/2)-1;
-        find_node(midPoint);
-        node* temp = last;
-        last = current;
-        secHalf.first = current->right;
-        last->right = first;
-        first->left = last;
-        long oldSize = size_;
-        size_ = midPoint+1;
-        secHalf.last = temp;
-        secHalf.last->right = secHalf.first;
-        secHalf.first->left = secHalf.last;
-        secHalf.size_ = oldSize - size_;
-        reset_saved();
-        secHalf.reset_saved();
+    void grab_and_replace(list & target) {
+        clear();
+        first = target.first;
+        last = target.last;
+        size_ = target.size_;
+        current = target.current;
+        current_i = target.current_i;
+        savedA = target.savedA;
+        savedA_i = target.savedA_i;
+        savedB = target.savedB;
+        savedB_i = target.savedB_i;
+        save_turn = target.save_turn;
+        objectID = target.objectID;
+        compare = target.compare;
+        target.set();
     }
     
-    void merge (list & dest) {
-        if (dest.size_==0 || objectID==dest.objectID)
+    void grab_and_add(list & target) {
+        if (target.size_==0)
             return;
-        if (size_==0)
-        {
-            first = dest.first;
-            last = dest.last;
-            size_ = dest.size_;
-            reset_saved();
-            dest.set();
+        if (size_==0) {
+            grab_and_replace(target);
             return;
         }
-        last->right = dest.first;
-        dest.first->left = last;
-        last = dest.last;
+        last->right = target.first;
+        target.first->left = last;
+        last = target.last;
         last->right = first;
-        first->left = last;
-        size_ = size_+dest.size_;
-        reset_saved();
-        dest.set();
+        size_ += target.size_;
+        target.set();
     }
     
     void sort(bool c_compare(data_type,data_type)=d_compare) {
@@ -370,6 +363,7 @@ public:
     }
     
     void operator = (const list & source) {
+        std::cout << "copied\n";
         clear();
         node* temp = source.first;
         for (long i=0; i<source.size_; i++)
@@ -504,7 +498,7 @@ private:
             savedB = current;
             savedB_i = current_i;
         }
-        save_turn = (~save_turn) & 1;
+        save_turn = !save_turn;
     }
     
     void add_node_back() {

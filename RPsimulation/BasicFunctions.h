@@ -10,7 +10,6 @@
 #include <random>
 #include <chrono>
 #include <cmath>
-#include <functional>
 
 bool file_exist(const char *fileName);
 char* asctime_ct(const struct tm *timeptr);

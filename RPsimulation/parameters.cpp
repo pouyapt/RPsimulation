@@ -50,17 +50,6 @@ double EntityParameters::getPOWreward(std::string parameter) {
         return POWrewardMax;
 }
 
-double EntityParameters::getPoolSize(std::string parameter) {
-    if (parameter=="mean")
-        return poolSizeMean;
-    else if (parameter=="std")
-        return poolSizeStd;
-    else if (parameter=="min")
-        return poolSizeMin;
-    else
-        return poolSizeMax;
-}
-
 double EntityParameters::getProbabilityConfidence(std::string parameter) {
     if (parameter=="mean")
         return probabilityConfidenceMean;
@@ -187,6 +176,7 @@ bool MiningParameters::readFiles() {
     in >> revenueRangeFactor;
     in >> revenueFunctionSteepness;
     in >> revenueFunctionZeroPoint;
+    in >> priceFluctuationFactor;
     in.close();
     return true;
 }
@@ -201,6 +191,7 @@ void MiningParameters::writeFiles() {
     out << revenueRangeFactor << std::endl;
     out << revenueFunctionSteepness << std::endl;
     out << revenueFunctionZeroPoint << std::endl;
+    out << priceFluctuationFactor << std::endl;
     out.close();
     std::cout << "The Mining Parameters file has been saved." << std::endl;
 }
@@ -212,26 +203,3 @@ char* convertToDate_Time(long time) {
     time += MP->getZeroTimeOffset();
     return asctime_ct(std::localtime(&time));
 }
-
-double populationEstimate(long time) {
-    PopulationParameters* populationP = &PopulationParameters::instance();
-    return sigmoid(time, populationP->maximumMiners, populationP->populationFunctionSteepness, populationP->halfMaximumMinersTime, 0);
-}
-
-double populationGrowthPhase1(long time) {
-    PopulationParameters* populationP = &PopulationParameters::instance();
-    return sigmoidDeravative(time, populationP->maximumMiners, populationP->populationFunctionSteepness, populationP->halfMaximumMinersTime);
-}
-
-double populationGrowthPhase2(long population) {
-    MiningParameters* miningP = &MiningParameters::instance();
-    PopulationParameters* populationP = &PopulationParameters::instance();
-    return sigmoid(population, populationP->maxPopulationGrowth, miningP->revenueFunctionSteepness, populationP->maximumMiners*miningP->revenueFunctionZeroPoint, populationP->maxPopulationGrowth/2);
-}
-
-double costRewardRatio(long population) {
-    MiningParameters* miningP = &MiningParameters::instance();
-    PopulationParameters* populationP = &PopulationParameters::instance();
-    return sigmoid(population, miningP->revenueRangeFactor, miningP->revenueFunctionSteepness, populationP->maximumMiners*miningP->revenueFunctionZeroPoint, miningP->revenueRangeFactor/2);
-}
-

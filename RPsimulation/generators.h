@@ -225,25 +225,12 @@ public:
         return a;
     }
     auto powReward() {
-    std::mt19937 gen{ran()};
-    std::normal_distribution<float> d(entityP->getPOWreward("mean"), entityP->getPOWreward("std"));
-    double a = 0;
-    do
-        a = d(gen);
-    while (a<entityP->getPOWreward("min") || a>=entityP->getPOWreward("max"));
-    return a;
-    }
-    auto poolSize() {
         std::mt19937 gen{ran()};
-        std::normal_distribution<float> d(entityP->getPoolSize("mean"), entityP->getPoolSize("std"));
+        std::normal_distribution<float> d(entityP->getPOWreward("mean"), entityP->getPOWreward("std"));
         double a = 0;
-        do {
+        do
             a = d(gen);
-            if (a<entityP->getPoolSize("min")) {
-                std::normal_distribution<float> d(entityP->getPoolSize("min"), entityP->getPoolSize("std")/100);
-            }
-        }
-        while (a<entityP->getPoolSize("min") || a>=entityP->getPoolSize("max"));
+        while (a<entityP->getPOWreward("min") || a>=entityP->getPOWreward("max"));
         return a;
     }
     double probabilityConfidence() {
@@ -280,6 +267,12 @@ public:
         do
             a = d(gen);
         while (a<entityP->leavePoolBeforeLooseFactor("min") || a>=entityP->leavePoolBeforeLooseFactor("max"));
+        return a;
+    }
+    double normalDistributionRandom(double mean, double std) {
+        std::mt19937 gen{ran()};
+        std::normal_distribution<double> d(mean,std);
+        double a = d(gen);
         return a;
     }
 };

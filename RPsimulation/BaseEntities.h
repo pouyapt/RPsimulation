@@ -6,8 +6,6 @@
 
 struct providedMiners {
     Miner* miner;
-    bool invite=false;
-    bool accept=false;
     double score=0;
 };
 
@@ -26,25 +24,24 @@ struct machine {
 
 class SineWaveModulator {
 private:
-    SineWaveModulator(double maxDistance, int decimals, int precision, int minPeriod, int maxPeriod);
+    SineWaveModulator(double range, int minPeriod, int maxPeriod);
     SineWaveModulator() {}
     VirtualTime* V = &VirtualTime::instance();
     core::Random* gen = &core::Random::instance();
-    double apply();
+    double range_;
     int d;
-    int p;
-    int maxD;
-    int minP;
-    int maxP;
-    long generatedTime;
-    long nextExterma;
-    double currentRate;
-    double currentDistance;
-    double offset = 0;
-    double lastCalculation = 0;
-    double mainFunction(long x, long a);
-    double calculateNextExterma();
-    bool generateAttributes(long time);
+    double maxR;
+    double minP;
+    double maxP;
+    double l;
+    double r;
+    double a;
+    double b;
+    double x_e;
+    double y_e;
+    void generateParameters();
+    double mainFunction(long t);
+    double getValue();
 public:
     friend class MasterTime;
 };
@@ -56,14 +53,11 @@ private:
     MasterTime();
     ~MasterTime();
     VirtualTime* VT = &VirtualTime::instance();
-    std::vector<SineWaveModulator*> M;
-    //std::map<std::string, SineWaveModulator*> M;
+    std::map<std::string, SineWaveModulator*> M;
     std::string file = "Data/modulators.db";
     void applyModulators();
     bool readFile();
     void writeFile();
-    bool readModulatorData();
-    void writeModulatorData();
 public:
     static MasterTime& instance() {
         static MasterTime instance;
@@ -73,8 +67,8 @@ public:
     MasterTime operator=(const MasterTime & orig) = delete;
     long addSecondsToCurrentTime(long seconds);
     long addHoursToCurrentTime(double hours);
-    unsigned createNewModulator(double maxDistance, int decimals, int precision, int minPeriod, int maxPeriod);
-    double getModulatorValue(int index);
+    void createNewModulator(double range, int minPeriod, int maxPeriod, std::string key);
+    double getModulatorValue(std::string key);
 };
 
 //----------------------------------------------------------------------------------
@@ -120,7 +114,7 @@ private:
     Money lossTolerance;
     struct machine m;
     double probabilityConfidence;
-    int receivedInvitations;
+    int receivedInvitationsCount;
     void initialize();
     void generateInitialValues();
     void powerCostCalculator();
@@ -130,7 +124,6 @@ private:
     MiningParameters* miningP = &MiningParameters::instance();
     Stats* variableP = &Stats::instance();
     core::list<poolEvaluation> invitations;
-    void processInvitation();
     Money estimatePoolProfit(PoolManager* PM);
 public:
     friend class MinerPopulation;
@@ -146,6 +139,7 @@ public:
     friend bool compareAViolation(Miner* a, Miner* b);
     friend bool compareProfit(Miner* a, Miner* b);
     friend bool compareRep(Miner* a, Miner* b);
+    friend bool compareInvitationCount(Miner* a, Miner* b);
     Miner operator=(const Miner & orig) = delete;
     std::string getFirstName();
     std::string getLastName();
@@ -157,7 +151,7 @@ public:
     int getDetectedViolations();
     int roundPlayed();
     Money getProfit();
-    bool isTaken();
+    bool isInPool();
     int getMined();
     long getIndex();
     bool extracted();
@@ -169,7 +163,9 @@ public:
     bool needsToExitPool();
     void savePoolManager(PoolManager* poolManager);
     void removePoolManager(PoolManager* poolManager);
+    void processInvitation();
     void print();
+    void printInvitations();
 };
 
 //--------------------------------------------------------------------------------
@@ -185,6 +181,7 @@ bool compareDViolation(Miner* a, Miner* b);
 bool compareAViolation(Miner* a, Miner* b);
 bool compareProfit(Miner* a, Miner* b);
 bool compareRep(Miner* a, Miner* b);
+bool compareInvitationCount(Miner* a, Miner* b);
 
 typedef bool (*compareFunc)(Miner* a, Miner* b);
 compareFunc selectCompareFunc(std::string by);
@@ -205,6 +202,9 @@ bool compareScore(providedMiners a, providedMiners b);
 double accessRep(providedMiners a);
 int accessMiningPower(providedMiners a);
 
+bool compareIndex(PoolManager* a, PoolManager* b);
+bool compareHash(PoolManager* a, PoolManager* b);
+
 //--------------------------------------------------------------------------------
 
 class MiningPool {
@@ -217,7 +217,6 @@ protected:
     unsigned int totalHashPower;
     double poolFee;
     double powReward;
-    double hashSizeProportion;
     Money grossIncome;
     MiningPool();
     MiningPool operator=(const MiningPool & orig) = delete;
@@ -241,23 +240,23 @@ private:
     long idValue;
     Money profit;
     int mined;
-    int desiredHash;
     bool openToNewMiner;
     core::Random* gen = &core::Random::instance();
-    int index;
+    long index;
     void initialize();
     void generate();
-    double poolHashPercentage();
-    void computeDesiredHash();
     void pushBack(Miner* miner);
     double aveRep();
     void calculateCandidatesScore();
+    int sendInvitationsCount = 0;
     std::time_t establishedTime;
     core::list<providedMiners> candidateMinersList;
     MiningParameters* miningP = &MiningParameters::instance();
     Stats* variableP = &Stats::instance();
 public:
     friend class Pools;
+    friend bool compareIndex(PoolManager* a, PoolManager* b);
+    friend bool compareHash(PoolManager* a, PoolManager* b);
     PoolManager operator=(const PoolManager & orig) = delete;
     void print();
     unsigned size();
@@ -272,15 +271,18 @@ public:
     double poolFee();
     Money poolRewards();
     bool isOpenToNewMiners();
-    int getIndex();
+    long getIndex();
     Miner* getMiner(unsigned index);
     void receiveReward(Money amount, Miner* miner);
     bool pickMiner(Miner* miner);
     bool releaseMiner(Miner* miner);
-    void receiveMinersList(core::list<providedMiners>& list);
-    double getDailyPowProbability();
+    void receiveCandidateMiner(Miner* miner);
+    Money estimateDailyRevenue(int hash=0);
     void receiveAcceptedInvitation(Miner* miner);
     void processCandidateMiners();
+    void printPoolMiners();
+    void printCandidateMiners();
+    void clearMinersCandidateList();
 };
 
 //--------------------------------------------------------------------------------

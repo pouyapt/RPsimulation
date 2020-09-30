@@ -8,7 +8,7 @@ class MinerPopulation {
 private:
     MinerPopulation();
     ~MinerPopulation();
-    core::list<Miner*> mainList;
+    core::list<Miner*> allMinersList;
     core::list<Miner*> removedList;
     long totalHashPower_ = 0;
     int allViolationsCount = 0;
@@ -44,6 +44,9 @@ private:
     void removeLostMiners();
     void removeLosingMinersFromPools();
     void processMinersRemoval();
+    double populationEstimate(long time);
+    double populationGrowthPhase1(long seconds);
+    double populationGrowthPhase2(long population);
 public:
     static MinerPopulation& instance() {
         static MinerPopulation instance;
@@ -68,6 +71,13 @@ public:
     int topHashPower();
     int MinersWithAtLeastOneBlock();
     int MinersWithProfit();
+    int testHash() {
+        int h = 0;
+        for (auto i=0; i<allMinersList.size(); i++) {
+            h += allMinersList[i]->hashPower;
+        }
+        return h;
+    }
 };
 
 //--------------------------------------------------------------------------------
@@ -79,6 +89,7 @@ private:
     core::list<PoolManager*> poolList;
     MinerPopulation* MP = &MinerPopulation::instance();
     PopulationParameters* populationP = &PopulationParameters::instance();
+    core::Random* gen = &core::Random::instance();
     Stats* variableP = &Stats::instance();
     PoolManager* getPool (unsigned index);
     void makePools(int number);
@@ -96,6 +107,7 @@ public:
     PoolManager* operator [] (unsigned index);
     unsigned int size();
     void print();
+    void shuffle();
     void saveIndex();
 };
 
