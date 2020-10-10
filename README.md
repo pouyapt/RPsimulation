@@ -1,13 +1,13 @@
-##Cryptocurrency Mining Simulation Program
+## Cryptocurrency Mining Simulation Program
 
 
-#Problem Definition
+# Problem Definition
 
 Dishonest mining is a serious problem in blockchain based cryptocurrencies. Malicious miners can exploit honest miners by conducting dishonest strategies such as selfish mining [1], block withholding [2], eclipse attack [3] and pool hopping [4] to name a few. 
 Nojoumian et al. [5] proposed a new reputation-based paradigm to address this issue. This new framework relies on game theoretical concepts as it is designed to incentivize the miners to commit to honest mining strategies. In this new system, each miner is assigned a public and perpetual reputation value that is initially zero and it will change over time based on the behavior of the miner. The range of the value is between -1 (lowest) and 1 (highest). If miners commit a malicious activity and it is detected by the system, their reputation value are affected negatively. Likewise, the reputation value of miners who are committed to honest mining, will increase over time.
 
 
-#Objective
+# Objective
 
 This simulation is designed to evaluate the effectiveness of the mentioned reputation-based paradigm. This program essentially simulates the interaction between the miners, pools and the pool managers in two scenarios:
 
@@ -17,7 +17,7 @@ In the second scenario, the reputation score is also considered. So the miners w
 To evaluate the effectiveness of the proposed framework, data will be extracted from the program and statistical analysis of that data will provide evaluation measurements.
 
 
-#The Architecture
+# The Architecture
 
 To simulate the cryptocurrency mining environment, the program consists of different entities that are defined as separate modules. These modules interact with one other. These interactions are initiated upon the execution of the program. The main modules included are:
 
@@ -42,20 +42,20 @@ Population Module: This module is a singleton object that is the source of all e
 User Interface: The user interface provides the user real time data monitoring and visualization for the different aspects of the mining game. It also includes a setting pane in which, the user can adjust various program parameters.
 
 
-#Program’s Workflow
+# Program’s Workflow
 
 	Initially the program generates a defined population of miners each with random attributes. The program also generates a number of mining pools and pool managers. The mining pools are initially empty. A random number is assigned to each pool that defines the desirable number of miners that the pool is willing to employ. Each miner has a utility function. This function enables miners to estimate the amount of reward they may collect as the result of selecting a particular mining pool. Miners have the option to choose a mining pools. For example, a miner evaluates a pool by the fee the pool charges and the pool’s hash power. This evaluation will determine which pool to join. Likewise the mining pools have their own utility function to determine which miners to employ.
 After the initial steps, the mining games begin and the data for all the entities are updated as individual mining games take place. The population modules controls the activeness of all entities. For example, if a miner loses money after a certain number of mining games or its utility function determines a negative profit, it sends a signal to the population module and the population module will remove it from the active list of miners and it will be invisible to other entities, however, its data will remain in the system. The population module also keeps generating new miners and adds them to the active list of miners. The same procedures also exist for pools and pool managers but with less intensity.
 
 
-#Implementation Details
+# Implementation Details
 
 	The main components and the core architecture of this program is developed inside Xcode IDE using C++ programing language. For better performance, this program is designed using a multi-threaded architecture. Various C++ standard libraries such as File Stream, Thread, Time, Random Math libraries are used.
 For the user interface there are two options:
 Juce version 6: Juce is a multi-platform C++ library that can provide the basic UI design platform for C++ based programs. It can be compiled for Windows, macOS and iOS. 
 A web-based user-interface: The other option is to build a web user-interface using HTML, CSS and Javascript programing language. This interface can be accessed through the web.
 
-#Reference
+# Reference
 
 [1] Eyal, Ittay, and Emin Gün Sirer. "Majority is not enough: Bitcoin mining is vulnerable." International conference on financial cryptography and data security. Springer, Berlin, Heidelberg, 2014.
 
