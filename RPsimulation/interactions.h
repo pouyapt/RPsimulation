@@ -10,13 +10,18 @@ public:
         return instance;
     }
     void run();
-//private:
+private:
+    int countUntilProcessInvitations;
+    void generateCount();
     PoolJoin();
     ~PoolJoin();
     MinerPopulation* MP = &MinerPopulation::instance();
     Pools* P = &Pools::instance();
     core::Random* gen = &core::Random::instance();
     Stats* stats = &Stats::instance();
+    void writeFile();
+    bool readFile();
+    std::string file = "Data/pooljoin.db";
     void provideMiners();
     void sendInvitations();
     void processInvitations();
@@ -36,7 +41,7 @@ private:
     PopulationParameters* populationP = &PopulationParameters::instance();
     MasterTime* T = &MasterTime::instance();
     core::Random* gen = &core::Random::instance();
-    void updateMinersPowerCost();
+    void updateCosts();
     int priceModulatorIndex = 0;
     Miner* winerMiner();
     Money totalNetworkRevenue;

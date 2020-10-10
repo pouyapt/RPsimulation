@@ -2,22 +2,45 @@
 
 
 PoolJoin::PoolJoin() {
-    
+    if (!readFile())
+        generateCount();
 }
 
 PoolJoin::~PoolJoin() {
-    
+    writeFile();
+}
+
+void PoolJoin::generateCount() {
+    countUntilProcessInvitations = int(gen->random_uniform_long(5, 15));
+}
+
+void PoolJoin::writeFile() {
+    std::ofstream out;
+    out.open(file);
+    out << countUntilProcessInvitations << std::endl;
+    out.close();
+    std::cout << "The pool interaction data has been saved." << std::endl;
+}
+
+bool PoolJoin::readFile() {
+    std::ifstream in;
+    in.open(file);
+    if (in.fail()) {
+        std::cout << "The pool interaction data file did not open." << std::endl;
+        return false;
+    }
+    in >> countUntilProcessInvitations;
+    in.close();
+    return true;
 }
 
 void PoolJoin::provideMiners() {
     P->shuffle();
     for (auto i=0; i<P->size(); i++) {
-        int n = int(gen->random_uniform_long(MP->size() / 8, MP->size() / 4));
+        int n = int(gen->random_uniform_long(MP->size()/15, MP->size()/5));
         for (auto j=0; j<n; j++) {
             int m = gen->select_random_index(0, MP->size()-1);
-            if ((*MP)[m]->isInPool()==false) {
-                (*P)[i]->receiveCandidateMiner((*MP)[m]);
-            }
+            (*P)[i]->receiveCandidateMiner((*MP)[m]);
         }
     }
 }
@@ -40,8 +63,13 @@ void PoolJoin::clearCandidateMinersList() {
 void PoolJoin::run() {
     provideMiners();
     sendInvitations();
-    processInvitations();
-    clearCandidateMinersList();
+    if (countUntilProcessInvitations)
+        countUntilProcessInvitations--;
+    else {
+        processInvitations();
+        clearCandidateMinersList();
+        generateCount();
+    }
 }
 
 //----------------------------------------------------------------------------------
@@ -50,8 +78,8 @@ Game::Game() {
     if (!ReadGameFile()) {
         totalNetworkRevenue = 0;
         totalNetworkCosts = 0;
-        T->createNewModulator(0.12, 55000, 250000, "priceModulator");
-        T->createNewModulator(0.15, 800000, 2600000, "revenueZeroPoint");
+        T->createNewModulator(miningP->priceFluctuationRange, miningP->priceFluctuationMinPhase, miningP->priceFluctuationMaxPhase, "priceModulator");
+        T->createNewModulator(miningP->revenueZeroPointRange, miningP->revenueZeroPointMinPhase, miningP->revenueZeroPointMaxPhase, "revenueZeroPoint");
         generateInitialUnitPrice();
         updateModulatedUnitPrice();
     }
@@ -128,18 +156,22 @@ Miner* Game::winerMiner() {
     return winner;
 }
 
-void Game::updateMinersPowerCost() {
+void Game::updateCosts() {
     lastRoundPowerCost = 0;
     Time time;
     time = gen->minig_time();
     lastGeneratedBlockTimestamp = time + T->getCurrentTime();
     MP->processPopulationChange(time.convertToNumber(), *this);
+    P->removeLostPools();
     lastRoundDuration = time;
-    for (int i=0; i<MP->size(); i++) {
+    for (auto i=0; i<P->size(); i++) {
+        (*P)[i]->updateCost(time);
+    }
+    for (auto i=0; i<MP->size(); i++) {
         Money powerCost;
         Time minedDuration;
-        if ((*MP)[i]->joinedTimestamp > T->getCurrentTime())
-            minedDuration = lastGeneratedBlockTimestamp - (*MP)[i]->joinedTimestamp;
+        if ((*MP)[i]->joinTimestamp > T->getCurrentTime())
+            minedDuration = lastGeneratedBlockTimestamp - (*MP)[i]->joinTimestamp;
         else
             minedDuration = time;
         powerCost = (*MP)[i]->powerCostPerHour * minedDuration.toHour();
@@ -155,7 +187,7 @@ void Game::updateMinersPowerCost() {
 void Game::mine() {
     Money reward;
     reward = modulatedUnitPrice * unitsPerBlock;
-    updateMinersPowerCost();
+    updateCosts();
     Miner* winner = winerMiner();
     if (winner->isInPool()==false)
         winner->receivePowRewards(reward);
@@ -192,7 +224,7 @@ Time Game::lastGeneratedBlockTime() const {
 
 double Game::costRewardRatio(long population) {
     double modulatedRevenueZeroPoint = miningP->revenueFunctionZeroPoint + (miningP->revenueFunctionZeroPoint*T->getModulatorValue("revenueZeroPoint"));
-    return sigmoid(population, miningP->revenueRangeFactor, miningP->revenueFunctionSteepness, populationP->maximumMiners*modulatedRevenueZeroPoint, miningP->revenueRangeFactor/2);
+    return sigmoid(population, miningP->revenueRangeFactor, miningP->revenueFunctionSteepness, populationP->maximumMiners*modulatedRevenueZeroPoint, miningP->revenueRangeFactor*0.45);
 }
 
 

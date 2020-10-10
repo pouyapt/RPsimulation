@@ -40,11 +40,7 @@ double EntityParameters::getPoolFeesPars(std::string parameter) {
 }
 
 double EntityParameters::getPOWreward(std::string parameter) {
-    if (parameter=="mean")
-        return POWrewardMean;
-    else if (parameter=="std")
-        return POWrewardStd;
-    else if (parameter=="min")
+    if (parameter=="min")
         return POWrewardMin;
     else
         return POWrewardMax;
@@ -68,6 +64,13 @@ double EntityParameters::lossToleranceFactor(std::string parameter) {
         return lossToleranceFactorMax;
 }
 
+double EntityParameters::targetProfitFactor(std::string parameter) {
+    if (parameter=="min")
+        return targetProfitFactorMin;
+    else
+        return targetProfitFactorMax;
+}
+
 double EntityParameters::leavePoolBeforeLooseFactor(std::string parameter) {
     if (parameter=="mean")
         return leavePoolBeforeLooseFactorMean;
@@ -77,6 +80,32 @@ double EntityParameters::leavePoolBeforeLooseFactor(std::string parameter) {
         return leavePoolBeforeLooseFactorMin;
     else
         return leavePoolBeforeLooseFactorMax;
+}
+
+int EntityParameters::poolMinumumMembershipTime(std::string parameter) {
+    if (parameter=="mean")
+        return poolMinumumMembershipTimeMean;
+    else if (parameter=="std")
+        return poolMinumumMembershipTimeStd;
+    else if (parameter=="min")
+        return poolMinumumMembershipTimeMin;
+    else
+        return poolMinumumMembershipTimeMax;
+}
+
+int EntityParameters::getPoolStartingInvestment() {
+    return poolStartingInvestment;
+}
+
+double EntityParameters::poolCostForOneMinerPerHour(std::string parameter) {
+    if (parameter=="mean")
+        return poolCostForOneMinerPerHourMean;
+    else if (parameter=="std")
+        return poolCostForOneMinerPerHourStd;
+    else if (parameter=="min")
+        return poolCostForOneMinerPerHourMin;
+    else
+        return poolCostForOneMinerPerHourMax;
 }
 
 //----------------------------------------------------------------------------------
@@ -154,7 +183,7 @@ int MiningParameters::getAverageMiningTime() {
 }
 
 double MiningParameters::getMinerMachinePricePerTh() {
-    return minerMachinePricePerTh;
+    return minerMachinePricePerHash;
 }
 
 double MiningParameters::calculateSteepness() {
@@ -172,11 +201,11 @@ bool MiningParameters::readFiles() {
     in >> zeroTimeOffset;
     in >> miningTimeMean;
     in >> miningTimeStd;
-    in >> minerMachinePricePerTh;
+    in >> minerMachinePricePerHash;
     in >> revenueRangeFactor;
     in >> revenueFunctionSteepness;
     in >> revenueFunctionZeroPoint;
-    in >> priceFluctuationFactor;
+    in >> priceFluctuationRange;
     in.close();
     return true;
 }
@@ -187,11 +216,11 @@ void MiningParameters::writeFiles() {
     out << zeroTimeOffset << std::endl;
     out << miningTimeMean << std::endl;
     out << miningTimeStd << std::endl;
-    out << minerMachinePricePerTh << std::endl;
+    out << minerMachinePricePerHash << std::endl;
     out << revenueRangeFactor << std::endl;
     out << revenueFunctionSteepness << std::endl;
     out << revenueFunctionZeroPoint << std::endl;
-    out << priceFluctuationFactor << std::endl;
+    out << priceFluctuationRange << std::endl;
     out.close();
     std::cout << "The Mining Parameters file has been saved." << std::endl;
 }

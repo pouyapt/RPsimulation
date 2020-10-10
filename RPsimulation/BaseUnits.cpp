@@ -308,7 +308,17 @@ Money Money::operator=(const double &value) {
     return *this;
 }
 
+Money Money::operator=(const double &&value) {
+    *this = convertFraction(value);
+    return *this;
+}
+
 Money Money::operator=(const long &value) {
+    *this = convertWhole(value);
+    return *this;
+}
+
+Money Money::operator=(const long &&value) {
     *this = convertWhole(value);
     return *this;
 }
@@ -318,7 +328,19 @@ Money Money::operator=(const int &value) {
     return *this;
 }
 
+Money Money::operator=(const int &&value) {
+    *this = convertWhole(value);
+    return *this;
+}
+
 Money Money::operator+(const Money &next) {
+    double value = next.convert();
+    double temp = convert();
+    Money newItem = convertFraction(value+temp);
+    return newItem;
+}
+
+Money Money::operator+(const Money &&next) {
     double value = next.convert();
     double temp = convert();
     Money newItem = convertFraction(value+temp);
@@ -331,13 +353,31 @@ Money Money::operator+(const long &value) {
     return newItem;
 }
 
+Money Money::operator+(const long &&value) {
+    double temp = convert();
+    Money newItem = convertFraction(temp+value);
+    return newItem;
+}
+
 Money Money::operator+(const int &value) {
     double temp = convert();
     Money newItem = convertFraction(temp+value);
     return newItem;
 }
 
+Money Money::operator+(const int &&value) {
+    double temp = convert();
+    Money newItem = convertFraction(temp+value);
+    return newItem;
+}
+
 Money Money::operator+(const double &value) {
+    double temp = convert();
+    Money newItem = convertFraction(value+temp);
+    return newItem;
+}
+
+Money Money::operator+(const double &&value) {
     double temp = convert();
     Money newItem = convertFraction(value+temp);
     return newItem;
@@ -350,7 +390,20 @@ Money Money::operator-(const Money &next) {
     return newItem;
 }
 
+Money Money::operator-(const Money &&next) {
+    double value = next.convert();
+    double temp = convert();
+    Money newItem = convertFraction(temp-value);
+    return newItem;
+}
+
 Money Money::operator-(const long &value) {
+    double temp = convert();
+    Money newItem = convertFraction(temp-value);
+    return newItem;
+}
+
+Money Money::operator-(const long &&value) {
     double temp = convert();
     Money newItem = convertFraction(temp-value);
     return newItem;
@@ -362,7 +415,19 @@ Money Money::operator-(const int &value) {
     return newItem;
 }
 
+Money Money::operator-(const int &&value) {
+    double temp = convert();
+    Money newItem = convertFraction(temp-value);
+    return newItem;
+}
+
 Money Money::operator-(const double &value) {
+    double temp = convert();
+    Money newItem = convertFraction(temp-value);
+    return newItem;
+}
+
+Money Money::operator-(const double &&value) {
     double temp = convert();
     Money newItem = convertFraction(temp-value);
     return newItem;
@@ -375,7 +440,20 @@ Money Money::operator*(const Money &next) {
     return newItem;
 }
 
+Money Money::operator*(const Money &&next) {
+    double value = next.convert();
+    double temp = convert();
+    Money newItem = convertFraction(temp*value);
+    return newItem;
+}
+
 Money Money::operator*(const long &value) {
+    double temp = convert();
+    Money newItem = convertFraction(value*temp);
+    return newItem;
+}
+
+Money Money::operator*(const long &&value) {
     double temp = convert();
     Money newItem = convertFraction(value*temp);
     return newItem;
@@ -387,7 +465,19 @@ Money Money::operator*(const int &value) {
     return newItem;
 }
 
+Money Money::operator*(const int &&value) {
+    double temp = convert();
+    Money newItem = convertFraction(value*temp);
+    return newItem;
+}
+
 Money Money::operator*(const double &value) {
+    double temp = convert();
+    Money newItem = convertFraction(value*temp);
+    return newItem;
+}
+
+Money Money::operator*(const double &&value) {
     double temp = convert();
     Money newItem = convertFraction(value*temp);
     return newItem;
@@ -400,7 +490,20 @@ Money Money::operator/(const Money &next) {
     return newItem;
 }
 
+Money Money::operator/(const Money &&next) {
+    double value = next.convert();
+    double temp = convert();
+    Money newItem = convertFraction(temp/value);
+    return newItem;
+}
+
 Money Money::operator/(const long &value) {
+    double temp = convert();
+    Money newItem = convertFraction(temp/value);
+    return newItem;
+}
+
+Money Money::operator/(const long &&value) {
     double temp = convert();
     Money newItem = convertFraction(temp/value);
     return newItem;
@@ -412,7 +515,19 @@ Money Money::operator/(const int &value) {
     return newItem;
 }
 
+Money Money::operator/(const int &&value) {
+    double temp = convert();
+    Money newItem = convertFraction(temp/value);
+    return newItem;
+}
+
 Money Money::operator/(const double &value) {
+    double temp = convert();
+    Money newItem = convertFraction(temp/value);
+    return newItem;
+}
+
+Money Money::operator/(const double &&value) {
     double temp = convert();
     Money newItem = convertFraction(temp/value);
     return newItem;
@@ -422,19 +537,40 @@ bool Money::operator>(const Money &m) {
     return convert() > m.convert();
 }
 
-bool Money::operator<(const Money& m) {
+bool Money::operator>(const Money &&m) {
+    return convert() > m.convert();
+}
+
+bool Money::operator<(const Money &m) {
     return convert() < m.convert();
 }
 
-bool Money::operator>=(const Money& m) {
+bool Money::operator<(const Money &&m) {
+    return convert() < m.convert();
+}
+
+bool Money::operator>=(const Money &m) {
     return convert() >= m.convert();
 }
 
-bool Money::operator<=(const Money& m) {
+bool Money::operator>=(const Money &&m) {
+    return convert() >= m.convert();
+}
+
+bool Money::operator<=(const Money &m) {
+    return convert() <= m.convert();
+}
+
+bool Money::operator<=(const Money &&m) {
     return convert() <= m.convert();
 }
 
 Money& Money::operator+=(const Money &value) {
+    *this = *this + value;
+    return *this;
+}
+
+Money& Money::operator+=(const Money &&value) {
     *this = *this + value;
     return *this;
 }
@@ -444,7 +580,17 @@ Money& Money:: operator+=(const double &value) {
     return *this;
 }
 
+Money& Money:: operator+=(const double &&value) {
+    *this = *this + value;
+    return *this;
+}
+
 Money& Money:: operator+=(const long &value) {
+    *this = *this + value;
+    return *this;
+}
+
+Money& Money:: operator+=(const long &&value) {
     *this = *this + value;
     return *this;
 }
@@ -454,7 +600,17 @@ Money& Money:: operator+=(const int &value) {
     return *this;
 }
 
+Money& Money:: operator+=(const int &&value) {
+    *this = *this + value;
+    return *this;
+}
+
 Money& Money:: operator-=(const Money &value) {
+    *this = *this - value;
+    return *this;
+}
+
+Money& Money:: operator-=(const Money &&value) {
     *this = *this - value;
     return *this;
 }
@@ -464,7 +620,17 @@ Money& Money:: operator-=(const double &value) {
     return *this;
 }
 
+Money& Money:: operator-=(const double &&value) {
+    *this = *this - value;
+    return *this;
+}
+
 Money& Money:: operator-=(const long &value) {
+    *this = *this - value;
+    return *this;
+}
+
+Money& Money:: operator-=(const long &&value) {
     *this = *this - value;
     return *this;
 }
@@ -474,11 +640,27 @@ Money& Money:: operator-=(const int &value) {
     return *this;
 }
 
+Money& Money:: operator-=(const int &&value) {
+    *this = *this - value;
+    return *this;
+}
+
 std::ostream& operator<<(std::ostream& os, Money& dl) {
     return os << dl.print();
 }
 
+std::ostream& operator<<(std::ostream& os, Money&& dl) {
+    return os << dl.print();
+}
+
 std::istream& operator>>(std::istream& is, Money& dl) {
+    double value;
+    is >> value;
+    dl = dl.convertFraction(value);
+    return is;
+}
+
+std::istream& operator>>(std::istream& is, Money&& dl) {
     double value;
     is >> value;
     dl = dl.convertFraction(value);
@@ -516,20 +698,20 @@ void Stats::updateNumberOfPoolMiners(int i) {
 
 void Stats::printCurrentStats() {
     std::cout << "\n================ Statistics ===============\n";
-    std::cout << "Current Unit Value:       " << current.unitPrice << std::endl;
-    std::cout << "Unit Per New Block:       " << getUnitPerNewBlock() << std::endl;
-    std::cout << "Total Hash Power:         " << current.totalHashPower << " TH/s" << std::endl;
-    std::cout << "Active Miners:            " << current.minersPopulation << std::endl;
-    std::cout << "Inactive Miners:          " << current.inactiveMinersPopulation << std::endl;
-    std::cout << "Pools:                    " << current.poolsPopulation << std::endl;
-    std::cout << "Solo / Pool Miners:       " << double(current.minersPopulation - current.numberOfPoolMiners)/double(current.minersPopulation)*100 << "% / " << double(current.numberOfPoolMiners)/double(current.minersPopulation)*100 << "%" << std::endl;
+    std::cout << "Current Unit Value:        " << current.unitPrice << std::endl;
+    std::cout << "Unit Per New Block:        " << getUnitPerNewBlock() << std::endl;
+    std::cout << "Total Network Hash Power:  " << current.totalHashPower << " TH/s" << std::endl;
+    std::cout << "Present Miners:            " << current.minersPopulation << std::endl;
+    std::cout << "Past Miners:               " << current.inactiveMinersPopulation << std::endl;
+    std::cout << "Number of Pools:           " << current.poolsPopulation << std::endl;
+    std::cout << "Solo / Pool Miners:        " << double(current.minersPopulation - current.numberOfPoolMiners)/double(current.minersPopulation)*100 << "% / " << double(current.numberOfPoolMiners)/double(current.minersPopulation)*100 << "%" << std::endl;
 
-    std::cout << "Last Generated Block:     " << convertToDate_Time(current.lastGeneratedBlockTime);
-    std::cout << "Highest Miner Reputation: " << current.highestMinerReputation << std::endl;
-    std::cout << "Lowest Miner Reputation:  " << current.lowestMinerReputation << std::endl;
-    std::cout << "Total Mined Blocks:       " << current.totalMinedBlocks << std::endl;
-    std::cout << "Total Value of Blocks:    " << current.totalRevenue << std::endl;
-    std::cout << "Total Power Costs:        " << current.totalCost << std::endl;
+    std::cout << "Last Generated Block:      " << convertToDate_Time(current.lastGeneratedBlockTime);
+    std::cout << "Highest Miner Reputation:  " << current.highestMinerReputation << std::endl;
+    std::cout << "Lowest Miner Reputation:   " << current.lowestMinerReputation << std::endl;
+    std::cout << "Total Mined Blocks:        " << current.totalMinedBlocks << std::endl;
+    std::cout << "Total Value of All Blocks: " << current.totalRevenue << std::endl;
+    std::cout << "Total Mining Power Costs:  " << current.totalCost << std::endl;
     std::cout << "===========================================\n";
 }
 
@@ -558,4 +740,12 @@ void Stats::addNewStatsToCsvFile() {
 
 void Stats::saveSnapShot() {
     snapShots.push_back(current);
+}
+
+void Stats::statFileInit() {
+    if (!file_exist("stats.csv")) {
+        std::ofstream out;
+        out.open("stats.csv");
+        out << "unix_time" << "," << "unit_price" << "," << "units_per_block" << "," << "total_hash_power" << "," << "miners" << "," << "pools" << "," << "pool_miners" << "," << "revenue" << "," << "cost" << std::endl;
+    }
 }

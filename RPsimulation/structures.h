@@ -15,7 +15,6 @@ private:
     int detectedViolationsCount = 0;
     long removedMinersCount = 0;
     int removeLostMinersCountdown = 0;
-    int removeLosingMinersCountdown = 0;
     double population = 0;
     bool populationStage = 0;
     std::string populationDataFile = "Data/p_data.db";
@@ -42,7 +41,6 @@ private:
     void calculateNumberOfNewMiners(long time);
     void processMinersAddition(long time);
     void removeLostMiners();
-    void removeLosingMinersFromPools();
     void processMinersRemoval();
     double populationEstimate(long time);
     double populationGrowthPhase1(long seconds);
@@ -71,13 +69,6 @@ public:
     int topHashPower();
     int MinersWithAtLeastOneBlock();
     int MinersWithProfit();
-    int testHash() {
-        int h = 0;
-        for (auto i=0; i<allMinersList.size(); i++) {
-            h += allMinersList[i]->hashPower;
-        }
-        return h;
-    }
 };
 
 //--------------------------------------------------------------------------------
@@ -109,6 +100,7 @@ public:
     void print();
     void shuffle();
     void saveIndex();
+    void removeLostPools();
 };
 
 //--------------------------------------------------------------------------------

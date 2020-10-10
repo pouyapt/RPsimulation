@@ -226,12 +226,9 @@ public:
     }
     auto powReward() {
         std::mt19937 gen{ran()};
-        std::normal_distribution<float> d(entityP->getPOWreward("mean"), entityP->getPOWreward("std"));
-        double a = 0;
-        do
-            a = d(gen);
-        while (a<entityP->getPOWreward("min") || a>=entityP->getPOWreward("max"));
-        return a;
+        std::uniform_int_distribution<> d(entityP->getPOWreward("min"), entityP->getPOWreward("max"));
+        float a = d(gen);
+        return a/1000;
     }
     double probabilityConfidence() {
         std::mt19937 gen{ran()};
@@ -246,6 +243,14 @@ public:
         std::mt19937 gen{ran()};
         std::uniform_int_distribution<> d(entityP->lossToleranceFactor("min")*100, entityP->lossToleranceFactor("max")*100);
         double a = double(d(gen))/(-100);
+        Money lossT;
+        lossT = investment * a;
+        return lossT;
+    }
+    Money targetProfit(Money investment) {
+        std::mt19937 gen{ran()};
+        std::uniform_int_distribution<> d(entityP->targetProfitFactor("min")*100, entityP->targetProfitFactor("max")*100);
+        double a = double(d(gen))/(100);
         Money lossT;
         lossT = investment * a;
         return lossT;
@@ -273,6 +278,24 @@ public:
         std::mt19937 gen{ran()};
         std::normal_distribution<double> d(mean,std);
         double a = d(gen);
+        return a;
+    }
+    long poolMinumumMembershipTime() {
+        std::mt19937 gen{ran()};
+        std::normal_distribution<> d(entityP->poolMinumumMembershipTime("mean"), entityP->poolMinumumMembershipTime("std"));
+        int a = 0;
+        do
+            a = d(gen);
+        while (a<entityP->poolMinumumMembershipTime("min") || a>=entityP->poolMinumumMembershipTime("max"));
+        return a*2592000;
+    }
+    auto costForOneMinerPerHour() {
+        std::mt19937 gen{ran()};
+        std::normal_distribution<double> d(entityP->poolCostForOneMinerPerHour("mean"), entityP->poolCostForOneMinerPerHour("std"));
+        double a = 0;
+        do
+            a = d(gen);
+        while (a<entityP->poolCostForOneMinerPerHour("min") || a>=entityP->poolCostForOneMinerPerHour("max"));
         return a;
     }
 };

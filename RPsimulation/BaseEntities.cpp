@@ -33,7 +33,7 @@ struct machine MinerMachines::randomPick() {
 
 //----------------------------------------------------------------------------------
 
-SineWaveModulator::SineWaveModulator(double range, int minPeriod, int maxPeriod) {
+SineWaveModulator::SineWaveModulator(double range, long minPeriod, long maxPeriod) {
     range_ = range/2;
     if (range<=0)
         exit(1);
@@ -57,7 +57,7 @@ double SineWaveModulator::mainFunction(long t) {
 
 void SineWaveModulator::generateParameters() {
     double l_ = (gen->random_uniform_long(minP, maxP));
-    long r_ = gen->random_uniform_long(-maxR/4, maxR/4);
+    long r_ = gen->random_uniform_long(-maxR/8, maxR/8);
     l = 1/l_;
     r = r_ * l_/maxP * pow(10, -d);
     a = x_e - (1/l);
@@ -112,6 +112,9 @@ void MasterTime::writeFile() {
         out << ell.second->range_ << std::endl;
         out << ell.second->d << std::endl;
     }
+    out << ModulatorNames.size() << std::endl;
+    for (auto i : ModulatorNames)
+        out << i << std::endl;
     out.close();
     std::cout << "Master Time file has been saved.\n";
 }
@@ -143,13 +146,21 @@ bool MasterTime::readFile() {
         M[k] = newM;
         size--;
     }
+    in >> size;
+    while (size) {
+        std::string temp;
+        in >> temp;
+        ModulatorNames.push_back(temp);
+        size--;
+    }
     in.close();
     return true;
 }
 
 void MasterTime::applyModulators() {
-    for (auto &ell: M)
+    for (auto &ell: M) {
         ell.second->getValue();
+    }
 }
 
 long MasterTime::getCurrentTime() {
@@ -160,6 +171,7 @@ long MasterTime::getCurrentTime() {
 long MasterTime::addSecondsToCurrentTime(long seconds) {
     VT->addSecondsToCurrentTime(seconds);
     applyModulators();
+    addModValuesToCsvFile();
     return VT->getCurrentTime();
 }
 
@@ -167,13 +179,48 @@ long MasterTime::addHoursToCurrentTime(double hours) {
     return VT->addHoursToCurrentTime(hours);
 }
 
-void MasterTime::createNewModulator(double range, int minPeriod, int maxPeriod, std::string key) {
+void MasterTime::createNewModulator(double range, long minPeriod, long maxPeriod, std::string key) {
     SineWaveModulator* m = new SineWaveModulator(range, minPeriod, maxPeriod);
     M[key] = m;
+    ModulatorNames.push_back(key);
 }
 
 double MasterTime::getModulatorValue(std::string key) {
     return M[key]->getValue();
+}
+
+void MasterTime::CsvFileInit() {
+    if (!file_exist("modulatorValues.csv")) {
+        std::ofstream out;
+        out.open("modulatorValues.csv");
+        out << "unix_time" << ",";
+        for (auto i=0; i<ModulatorNames.size(); i++) {
+            out << ModulatorNames[i];
+            if (i!=ModulatorNames.size()-1)
+                out << ",";
+        }
+        out << std::endl;
+        out.close();
+    }
+}
+
+void MasterTime::addModValuesToCsvFile() {
+    CsvFileInit();
+    std::string filename = "modulatorValues.csv";
+    std::fstream uidlFile(filename, std::fstream::in | std::fstream::out | std::fstream::app);
+     if (uidlFile.is_open()) {
+         uidlFile << getCurrentTime() << ",";
+         for (auto i=0; i<ModulatorNames.size(); i++) {
+             uidlFile << M[ModulatorNames[i]]->getValue();
+             if (i!=ModulatorNames.size()-1)
+                 uidlFile << ",";
+         }
+         uidlFile << std::endl;
+         uidlFile.close();
+     }
+     else {
+       std::cout << "Cannot save to 'modulatorValues.csv' file" << std::endl;
+     }
 }
 
 //----------------------------------------------------------------------------------
@@ -198,7 +245,7 @@ long Miner::getID() {
 }
 
 long Miner::getJoinedTimestamp() {
-    return joinedTimestamp;
+    return joinTimestamp;
 }
 
 int Miner::getHashPower() {
@@ -234,6 +281,8 @@ long Miner::getIndex() {
 }
 
 void Miner::savePoolManager(PoolManager* poolManager) {
+    if (poolJoined==-1)
+        poolJoined = T->getCurrentTime();
     pool = poolManager;
     taken = true;
 }
@@ -242,17 +291,19 @@ void Miner::removePoolManager(PoolManager* poolManager) {
     if (poolManager == pool) {
         pool = NULL;
         taken = false;
+        poolJoined = -1;
+        return;
     }
-    else
-        std::cout << "Miner::removePoolManager: Pool Manger was not found" << std::endl;
+    std::cout << "Miner::removePoolManager: Pool Manger was not found" << std::endl;
 }
 
 void Miner::initialize() {
     idValue = 0;
-    joinedTimestamp = 0;
+    joinTimestamp = 0;
     reputation = 0;
     detectedViolations = 0;
     allViolations = 0;
+    violationTimeOffset = 0;
     costs = 0;
     poolIncome = 0;
     powIncome = 0;
@@ -260,8 +311,10 @@ void Miner::initialize() {
     dishonestyFactor = 0;
     roundsPlayed = 0;
     mined = 0;
+    poolJoined = -1;
     powerConRate = 0;
     receivedInvitationsCount = 0;
+    newMiner = true;
     taken = false;
     pool = NULL;
 }
@@ -270,7 +323,7 @@ void Miner::generateInitialValues() {
     firstName = gen->name();
     lastName = gen->name();
     idValue = gen->id_number(1000000000000000, 2000000000000000);
-    joinedTimestamp = T->getCurrentTime();
+    joinTimestamp = T->getCurrentTime();
     hashPower = gen->minig_power();
     dishonestyFactor = gen->dishonestyFactor();
     powerConRate = gen->miningPowerConsumption();
@@ -278,6 +331,7 @@ void Miner::generateInitialValues() {
     probabilityConfidence = gen->probabilityConfidence();
     investment = hashPower * miningP->getMinerMachinePricePerTh();
     lossTolerance = gen->lossTolerance(investment);
+    targetProfit = investment + gen->targetProfit(investment);
     powerCostCalculator();
 }
 
@@ -298,28 +352,40 @@ void Miner::addCost(Money amount) {
     costs -= amount;
 }
 
+bool Miner::poolCommitmentTimeIsOver() {
+    if (pool==NULL || poolJoined==-1)
+        return true;
+    return poolJoined+pool->getMinimumMembershipTime() > T->getCurrentTime() ? true : false;
+}
+
 void Miner::print() {
     std::cout << "------------------------------------------\n";
     std::cout << "Name:             " << firstName << " " << lastName << std::endl;
     std::cout << "ID:               " << idValue << std::endl;
-    std::cout << "Jonied On:        " << convertToDate_Time(joinedTimestamp);
+    std::cout << "Join Time:        " << convertToDate_Time(joinTimestamp);
     std::cout << "Hash Rate:        " << hashPower << " TH/S" << std::endl;
-    //std::cout << "DH Factor:      " << dishonestyFactor << std::endl;
-    std::cout << "Power Rate:       " << powerConRate << " per KW" << std::endl;
-    std::cout << "Power Cost:       " << powerCostPerHour << " per Hour" << std::endl;
-    if (pool!=NULL)
-        std::cout << "Pool Name:        " << pool->poolName() << std::endl;
-    else
-        std::cout << "Pool Name:        " << "--" << std::endl;
-    std::cout << "Income (Pool):    " << poolIncome << std::endl;
-    std::cout << "Income (POW):     " << powIncome << std::endl;
-    std::cout << "Costs:            " << costs << std::endl;
-    Money profit = poolIncome + powIncome + costs;
-    std::cout << "Net Profit:       " << profit << std::endl;
     std::cout << "Reputation:       " << reputation << std::endl;
+    //std::cout << "DH Factor:      " << dishonestyFactor << std::endl;
+    std::cout << "Power Rate:       " << powerConRate*-1 << " per KW" << std::endl;
+    std::cout << "Power Cost:       " << powerCostPerHour*-1 << " per Hour" << std::endl;
+    std::cout << "Es. Daily Profit: " << estimateSoloMiningProfit() << std::endl;
+    if (pool!=NULL)
+        std::cout << "Member of Pool:   " << pool->poolName() << std::endl;
+    else
+        std::cout << "Member of Pool:   " << "--\n";
+    if (poolJoined!=-1)
+        std::cout << "Pool Join Time:   " << convertToDate_Time(poolJoined);
+    else
+        std::cout << "Pool Join Time:   " << "--\n" ;
+    std::cout << "No Solo Profit:   " << soloMinigNotProfitable << std::endl;
+    std::cout << "Income - Pool:    " << poolIncome << std::endl;
+    std::cout << "Income - Solo:    " << powIncome << std::endl;
+    std::cout << "Costs:            " << costs << std::endl;
+    std::cout << "Net Profit:       " << poolIncome + powIncome + costs << std::endl;
     std::cout << "Mining Time:      " << minedTime << std::endl;
     std::cout << "Blocks Mined:     " << mined << std::endl;
     std::cout << "Loss Tolerance:   " << lossTolerance << std::endl;
+    std::cout << "Target Profit:    " << targetProfit << std::endl;
     std::cout << "Invited to Pools: " << receivedInvitationsCount << std::endl;
     //std::cout << "D Violation       " << detectedViolations << std::endl;
     //std::cout << "A Violation:      " << allViolations << std::endl;
@@ -335,31 +401,71 @@ void Miner::printInvitations() {
 }
 
 void Miner::receiveInvitation(PoolManager* p) {
+    if (p==pool)
+        return;
+    for (auto i=0; i<invitations.size(); i++) {
+        if (invitations[i].PM==p)
+            return;
+    }
     poolEvaluation PE;
     PE.PM = p;
     invitations.push_back(PE);
     receivedInvitationsCount++;
 }
 
-Money Miner::estimatePoolProfit(PoolManager* PM) {
+bool Miner::loseIfMineSolo(Money dailyCost, Money dailyProfit, Money reward) {
+    if (dailyProfit.convert()<=0)
+        return true;
+    double powAverageDuration = (reward/dailyProfit).convert();
+    Money profit = powIncome + costs;
+    if (dailyCost*powAverageDuration - profit >= lossTolerance*(-1))
+        return true;
+    return false;
+}
+
+Money Miner::estimateSoloMiningProfit() {
+    double px = double(hashPower) / double(variableP->getCurrentTotalHashPower());
+    int n = 86400 / miningP->getAverageMiningTime();
+    Money reward = variableP->getUnitPrice() * variableP->getUnitPerNewBlock();
+    Money dailyCost = powerCostPerHour*24;
+    Money dailyProfit = (reward*(n*px)) - dailyCost;
+    soloMinigNotProfitable = loseIfMineSolo(dailyCost, dailyProfit, reward);
+    return dailyProfit;
+}
+
+Money Miner::estimatePoolProfit(PoolManager* PM, bool newPool) {
     Money reward;
-    reward = PM->estimateDailyRevenue(hashPower);
-    double share = double(hashPower) / (double(PM->poolHashPower())+hashPower);
+    double share;
+    if (newPool) {
+        reward = PM->estimateDailyRevenueForMiners(hashPower);
+        share = double(hashPower) / (double(PM->poolHashPower())+hashPower);
+    }
+    else {
+        reward = PM->estimateDailyRevenueForMiners(0);
+        share = double(hashPower) / double(PM->poolHashPower());
+    }
     Money dailyRewardShare;
     dailyRewardShare = reward * share;
+    Money powReward = PM->estimateDailyPowRewardForMiners(hashPower);
     Money dailyCost;
     dailyCost = powerCostPerHour * 24;
-    return dailyRewardShare - dailyCost;
+    return dailyRewardShare + powReward - dailyCost;
 }
 
 void Miner::processInvitation() {
     if (invitations.empty())
         return;
+    if (poolCommitmentTimeIsOver()==false)
+        return;
+    Money currentSoloProfit = estimateSoloMiningProfit();
+    Money currentPoolProfit;
+    currentPoolProfit = pool!=NULL ? estimatePoolProfit(pool, false) : INT_MIN;
+    if (soloMinigNotProfitable)
+        currentSoloProfit = INT_MIN;
+    Money max = currentPoolProfit >= currentSoloProfit ? currentPoolProfit : currentSoloProfit;
     for (int i=0; i<invitations.size(); i++) {
         invitations[i].EstimatedDailyProfit = estimatePoolProfit(invitations[i].PM);
     }
-    Money max;
-    max = INT_MIN;
     int index = -1;
     for (int i=0; i<invitations.size(); i++) {
         if (invitations[i].EstimatedDailyProfit > max) {
@@ -367,9 +473,12 @@ void Miner::processInvitation() {
             index = i;
         }
     }
-    if (index!=-1 && max>0) {
+    if (index!=-1) {
+        if (pool!=NULL)
+            pool->releaseMiner(this);
         invitations[index].PM->receiveAcceptedInvitation(this);
         invitations.clear();
+        return;
     }
 }
 
@@ -377,9 +486,8 @@ bool Miner::isBellowLossTolerance () {
     return ( (poolIncome+powIncome+costs) < lossTolerance ? true : false );
 }
 
-bool Miner::needsToExitPool() {
-    double p = gen->poolExitTolerance();
-    return ( (poolIncome+powIncome+costs) < lossTolerance*p ? true : false );
+bool Miner::isReachedTargetProfit() {
+    return ( (poolIncome+powIncome+costs) >= targetProfit ? true : false );
 }
 
 //----------------------------------------------------------------------------------
@@ -397,7 +505,7 @@ bool compareMiningPower(Miner* a, Miner* b) {
 }
 
 bool compareJoinDate(Miner* a, Miner* b) {
-    return (a->joinedTimestamp <= b->joinedTimestamp ? true : false);
+    return (a->joinTimestamp <= b->joinTimestamp ? true : false);
 }
 
 bool compareMined(Miner* a, Miner* b) {
@@ -478,7 +586,7 @@ bool compareRep_p(providedMiners a, providedMiners b) {
 }
 
 bool compareScore(providedMiners a, providedMiners b) {
-    return (a.score >= b.score ? true : false);
+    return (a.expectedDailyProfit >= b.expectedDailyProfit ? true : false);
 }
 
 bool compareIndex(PoolManager* a, PoolManager* b) {
@@ -510,8 +618,10 @@ compareFunc selectCompareFunc(std::string by) {
         return &compareOldIndex;
     else if (by=="id")
         return &compareID;
-    else
+    else if (by=="in")
         return &compareInvitationCount;
+    else
+        return &compareID;
 }
 
 double accessRep(providedMiners a) {
@@ -552,7 +662,7 @@ std::string& MiningPool::poolName() {
 void MiningPool::distributeMinersReward(Money amount, Miner* miner) {
     Money minerReward = amount * powReward;
     amount -= minerReward;
-    miner->receivePowRewards(minerReward);
+    miner->receivePoolRewards(minerReward);
     for (int i=0; i<miners.size(); i++) {
         Money minersShare;
         minersShare = amount * (double(miners[i]->getHashPower())/double(totalHashPower));
@@ -598,7 +708,7 @@ PoolManager::PoolManager(std::string mode) {
 }
 
 void PoolManager::initialize() {
-    profit = 0;
+    income = 0;
     mined = 0;
     openToNewMiner = true;
 }
@@ -607,6 +717,11 @@ void PoolManager::generate() {
     firstName = gen->name();
     lastName = gen->name();
     idValue = gen->id_number(1000000, 9999999);
+    minimumMembershipTime = gen->poolMinumumMembershipTime();
+    Money investment;
+    investment = entityP->getPoolStartingInvestment();
+    lossTolerance = gen->lossTolerance(investment);
+    costPerMiner = gen->costForOneMinerPerHour();
 }
 
 Miner* PoolManager::getMiner(unsigned index) {
@@ -645,6 +760,10 @@ unsigned int PoolManager::poolHashPower() {
     return MiningPool::totalHashPower;
 }
 
+long PoolManager::getMinimumMembershipTime() {
+    return minimumMembershipTime;
+}
+
 double PoolManager::poolFee() {
     return MiningPool::poolFee;
 }
@@ -658,7 +777,7 @@ int PoolManager::getMined() {
 }
 
 Money PoolManager::getProfit() {
-    return profit;
+    return income;
 }
 
 bool PoolManager::isOpenToNewMiners() {
@@ -673,15 +792,17 @@ void PoolManager::receiveReward(Money amount, Miner* miner) {
     grossIncome += amount;
     Money newProfit;
     newProfit = amount*MiningPool::poolFee;
-    profit += newProfit;
+    income += newProfit;
     amount -= newProfit;
     mined++;
     MiningPool::distributeMinersReward(amount, miner);
 }
 
 bool PoolManager::pickMiner(Miner* miner) {
-    if (miner->isInPool())
+    if (miner->isInPool()) {
+        std::cout << "pickMiner: Miner is already in a pool.\n";
         return false;
+    }
     MiningPool::addMiner(miner);
     miner->savePoolManager(this);
     variableP->updateNumberOfPoolMiners(1);
@@ -697,7 +818,16 @@ bool PoolManager::releaseMiner(Miner* miner) {
     return false;
 }
 
+void PoolManager::updateCost(Time miningTime) {
+    double newCost = miningTime.convertToNumber()/3600.0 * costPerMiner.convert() * MiningPool::miners.size();
+    cost -= newCost;
+}
+
 void PoolManager::receiveCandidateMiner(Miner* miner) {
+    for (auto i=0; i<MiningPool::miners.size(); i++) {
+        if (miner==MiningPool::miners[i])
+            return;
+    }
     for (auto i=0; i<candidateMinersList.size(); i++) {
         if (miner==candidateMinersList[i].miner)
             return;
@@ -707,39 +837,51 @@ void PoolManager::receiveCandidateMiner(Miner* miner) {
     candidateMinersList.push_back(p);
 }
 
-Money PoolManager::estimateDailyRevenue(int hash) {
+Money PoolManager::estimateDailyRevenueForMiners(int hash) {
     double px = (double(totalHashPower)+hash) / double(variableP->getCurrentTotalHashPower());
     int n = 86400 / miningP->getAverageMiningTime();
     double r = n * px * variableP->getUnitPrice().convert() * variableP->getUnitPerNewBlock();
     Money reward;
-    reward = r - (MiningPool::poolFee * r);
+    r = r - (r * MiningPool::poolFee);
+    r = r - (r * powReward);
+    reward = r;
     return reward;
 }
 
+Money PoolManager::estimateDailyPowRewardForMiners(int hash) {
+    Money reward;
+    double px = double(hash) / double(variableP->getCurrentTotalHashPower());
+    int n = 86400 / miningP->getAverageMiningTime();
+    double r = n * px * variableP->getUnitPrice().convert() * variableP->getUnitPerNewBlock() * powReward;
+    reward = r;
+    return  reward;
+}
+
 void PoolManager::receiveAcceptedInvitation(Miner* miner) {
-    for (auto i=0; i<candidateMinersList.size(); i++) {
-        if (miner==candidateMinersList[i].miner) {
-            pickMiner(miner);
-        }
-    }
+    pickMiner(miner);
 }
 
 void PoolManager::print() {
     std::cout << "------------------------------------------\n";
-    std::cout << "Pool Name:        " << poolName() << std::endl;
-    std::cout << "ID Number:        " << idValue << std::endl;
-    std::cout << "Pool Fee:         " << poolFee()*100 << "%\n";
-    std::cout << "POW Award:        " << MiningPool::powReward*100 << "%\n";
-    std::cout << "Miners Count:     " << size() << std::endl;
-    std::cout << "Hash Power:       " << poolHashPower() << std::endl;
-    std::cout << "Hash Share:       " << double(poolHashPower()) / double(variableP->getCurrentTotalHashPower())*100 << "%\n";
-    std::cout << "All Profit:       " << profit << std::endl;
-    std::cout << "Mined Count:      " << mined << std::endl;
+    std::cout << "Pool Name:            " << poolName() << std::endl;
+    std::cout << "ID Number:            " << idValue << std::endl;
+    std::cout << "Minimum Membership:   " << minimumMembershipTime/2592000 << " Months\n";
+    std::cout << "Pool Fee:             " << poolFee()*100 << "%\n";
+    std::cout << "POW Award:            " << MiningPool::powReward*100 << "%\n";
+    std::cout << "Miners Count:         " << size() << std::endl;
+    std::cout << "Hash Power:           " << poolHashPower() << std::endl;
+    std::cout << "Hash Share:           " << double(poolHashPower()) / double(variableP->getCurrentTotalHashPower())*100 << "%\n";
+    std::cout << "Income:               " << income << std::endl;
+    std::cout << "Costs:                " << cost << std::endl;
+    std::cout << "Mined Blocks Count:   " << mined << std::endl;
+    std::cout << "Loss Tolerance:       " << lossTolerance << std::endl;
     std::cout << "------------------------------------------\n";
 }
 
 void PoolManager::printPoolMiners() {
-    
+    for (auto i=0; i<MiningPool::miners.size(); i++) {
+        MiningPool::miners[i]->print();
+    }
 }
 
 void PoolManager::printCandidateMiners() {
@@ -758,22 +900,46 @@ void PoolManager::calculateCandidatesScore() {
     double ave = aveRep();
     for (auto i=0; i<candidateMinersList.size(); i++) {
         double d = candidateMinersList[i].miner->getReputation() - ave;
-        candidateMinersList[i].score = candidateMinersList[i].miner->getHashPower() + d*candidateMinersList[i].miner->getHashPower();
+        candidateMinersList[i].expectedDailyProfit = candidateMinersList[i].miner->getHashPower() + d*candidateMinersList[i].miner->getHashPower();
     }
 }
 
 void PoolManager::processCandidateMiners() {
-    calculateCandidatesScore();
-    candidateMinersList.sort(&compareScore);
-    int n = gen->errorFactor(0.45, 0.05) * candidateMinersList.size();
-    for (auto i=0; i<n; i++) {
-        candidateMinersList[i].miner->receiveInvitation(this);
-        sendInvitationsCount++;
+    if (!candidateMinersList.size())
+        return;
+    for (auto i=0; i<candidateMinersList.size(); i++) {
+        candidateMinersList[i].expectedDailyProfit = calculateProfitForNewMiner(candidateMinersList[i].miner);
     }
+    for (auto i=0; i<candidateMinersList.size(); i++) {
+        if (candidateMinersList[i].expectedDailyProfit>0) {
+            candidateMinersList[i].miner->receiveInvitation(this);
+            sendInvitationsCount++;
+        }
+    }
+    clearMinersCandidateList();
 }
 
 void PoolManager::clearMinersCandidateList() {
     candidateMinersList.clear();
+}
+
+double PoolManager::calculateProfitForNewMiner(Miner* miner) {
+    double px0 = double(totalHashPower) / double(variableP->getCurrentTotalHashPower());
+    double px1 = (double(totalHashPower)+miner->getHashPower()) / double(variableP->getCurrentTotalHashPower());
+    int n = 86400 / miningP->getAverageMiningTime();
+    double maxDailyRevenue = n * variableP->getUnitPrice().convert() * variableP->getUnitPerNewBlock();
+    double p = maxDailyRevenue*poolFee()*(px1 - px0) - costPerMiner.convert()*24;;
+    return p;
+}
+
+bool PoolManager::isBellowLossTolerance() {
+    return income+cost <= lossTolerance ? true : false;
+}
+
+void PoolManager::releaseAllMiners() {
+    for (auto i=0; i<MiningPool::miners.size(); i++) {
+        releaseMiner(miners[i]);
+    }
 }
 
 //----------------------------------------------------------------------------------

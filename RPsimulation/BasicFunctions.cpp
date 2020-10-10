@@ -11,14 +11,6 @@ void databaseInit() {
     }
 }
 
-void statFileInit() {
-    if (!file_exist("stats.csv")) {
-        std::ofstream out;
-        out.open("stats.csv");
-        out << "unix_time" << "," << "unit_price" << "," << "units_per_block" << "," << "total_hash_power" << "," << "miners" << "," << "pools" << "," << "solo_miners" << "," << "revenue" << "," << "cost" << std::endl;
-    }
-}
-
 char* asctime_ct(const struct tm *timeptr) {
   static const char mon_name[][4] = {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -27,10 +19,6 @@ char* asctime_ct(const struct tm *timeptr) {
   static char result[26];
   sprintf(result, "%.3s%3d, %d - %.2d:%.2d\n", mon_name[timeptr->tm_mon], timeptr->tm_mday, 1900 + timeptr->tm_year, timeptr->tm_hour, timeptr->tm_min);
   return result;
-}
-
-double expectedValue(double mean, double std) {
-    return 0;
 }
 
 double atLeastOneOccurencePerNTrial(double probability, int noOfTrials) {

@@ -6,7 +6,7 @@
 
 struct providedMiners {
     Miner* miner;
-    double score=0;
+    double expectedDailyProfit=0;
 };
 
 struct poolEvaluation {
@@ -24,7 +24,7 @@ struct machine {
 
 class SineWaveModulator {
 private:
-    SineWaveModulator(double range, int minPeriod, int maxPeriod);
+    SineWaveModulator(double range, long minPeriod, long maxPeriod);
     SineWaveModulator() {}
     VirtualTime* V = &VirtualTime::instance();
     core::Random* gen = &core::Random::instance();
@@ -54,10 +54,13 @@ private:
     ~MasterTime();
     VirtualTime* VT = &VirtualTime::instance();
     std::map<std::string, SineWaveModulator*> M;
+    std::vector<std::string> ModulatorNames;
     std::string file = "Data/modulators.db";
     void applyModulators();
     bool readFile();
     void writeFile();
+    void CsvFileInit();
+    void addModValuesToCsvFile();
 public:
     static MasterTime& instance() {
         static MasterTime instance;
@@ -67,7 +70,7 @@ public:
     MasterTime operator=(const MasterTime & orig) = delete;
     long addSecondsToCurrentTime(long seconds);
     long addHoursToCurrentTime(double hours);
-    void createNewModulator(double range, int minPeriod, int maxPeriod, std::string key);
+    void createNewModulator(double range, long minPeriod, long maxPeriod, std::string key);
     double getModulatorValue(std::string key);
 };
 
@@ -92,39 +95,47 @@ private:
     std::string firstName;
     std::string lastName;
     long idValue;
-    std::time_t joinedTimestamp;
+    std::time_t joinTimestamp;
+    std::time_t quitTimestamp;
     double reputation;
     int hashPower;
     int detectedViolations;
     int allViolations;
+    long violationTimeOffset;
     Money powerCostPerHour;
     Money costs;
     Money poolIncome;
     Money powIncome;
     Money investment;
+    Money targetProfit;
     int roundsPlayed;
     double dishonestyFactor;
     bool taken;
     int mined;
     Time minedTime;
+    long poolJoined;
     long shuffleValue;
     long index;
     long oldIndex;
     Money powerConRate;
     Money lossTolerance;
+    bool soloMinigNotProfitable = true;
     struct machine m;
     double probabilityConfidence;
     int receivedInvitationsCount;
     void initialize();
     void generateInitialValues();
     void powerCostCalculator();
+    bool poolCommitmentTimeIsOver();
     PoolManager* pool;
-    MasterTime* T = &MasterTime::instance();
+    VirtualTime* T = &VirtualTime::instance();
     core::Random* gen = &core::Random::instance();
     MiningParameters* miningP = &MiningParameters::instance();
     Stats* variableP = &Stats::instance();
     core::list<poolEvaluation> invitations;
-    Money estimatePoolProfit(PoolManager* PM);
+    Money estimateSoloMiningProfit();
+    Money estimatePoolProfit(PoolManager* PM, bool newPool=true);
+    bool loseIfMineSolo(Money dailyCost, Money dailyProfit, Money reward);
 public:
     friend class MinerPopulation;
     friend class Game;
@@ -140,6 +151,7 @@ public:
     friend bool compareProfit(Miner* a, Miner* b);
     friend bool compareRep(Miner* a, Miner* b);
     friend bool compareInvitationCount(Miner* a, Miner* b);
+    bool newMiner;
     Miner operator=(const Miner & orig) = delete;
     std::string getFirstName();
     std::string getLastName();
@@ -160,7 +172,7 @@ public:
     void addCost(Money amount);
     void receiveInvitation(PoolManager* p);
     bool isBellowLossTolerance();
-    bool needsToExitPool();
+    bool isReachedTargetProfit();
     void savePoolManager(PoolManager* poolManager);
     void removePoolManager(PoolManager* poolManager);
     void processInvitation();
@@ -208,12 +220,11 @@ bool compareHash(PoolManager* a, PoolManager* b);
 //--------------------------------------------------------------------------------
 
 class MiningPool {
-private:
+protected:
     core::list<Miner*> miners;
     std::string name;
     core::Random* gen = &core::Random::instance();
     void initialize();
-protected:
     unsigned int totalHashPower;
     double poolFee;
     double powReward;
@@ -238,7 +249,10 @@ private:
     std::string firstName;
     std::string lastName;
     long idValue;
-    Money profit;
+    Money income;
+    Money cost;
+    Money costPerMiner;
+    Money lossTolerance;
     int mined;
     bool openToNewMiner;
     core::Random* gen = &core::Random::instance();
@@ -247,11 +261,16 @@ private:
     void generate();
     void pushBack(Miner* miner);
     double aveRep();
+    long minimumMembershipTime;
     void calculateCandidatesScore();
+    double calculateProfitForNewMiner(Miner* miner);
+    bool isBellowLossTolerance();
+    void releaseAllMiners();
     int sendInvitationsCount = 0;
     std::time_t establishedTime;
     core::list<providedMiners> candidateMinersList;
     MiningParameters* miningP = &MiningParameters::instance();
+    EntityParameters* entityP = &EntityParameters::instance();
     Stats* variableP = &Stats::instance();
 public:
     friend class Pools;
@@ -261,6 +280,7 @@ public:
     void print();
     unsigned size();
     int getMined();
+    long getMinimumMembershipTime();
     Money getProfit();
     std::string getFirstName();
     std::string getLastName();
@@ -273,11 +293,13 @@ public:
     bool isOpenToNewMiners();
     long getIndex();
     Miner* getMiner(unsigned index);
+    void updateCost(Time miningTime);
     void receiveReward(Money amount, Miner* miner);
     bool pickMiner(Miner* miner);
     bool releaseMiner(Miner* miner);
     void receiveCandidateMiner(Miner* miner);
-    Money estimateDailyRevenue(int hash=0);
+    Money estimateDailyRevenueForMiners(int hash=0);
+    Money estimateDailyPowRewardForMiners(int hash);
     void receiveAcceptedInvitation(Miner* miner);
     void processCandidateMiners();
     void printPoolMiners();
