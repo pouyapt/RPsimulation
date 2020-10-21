@@ -37,7 +37,7 @@ bool PoolJoin::readFile() {
 void PoolJoin::provideMiners() {
     P->shuffle();
     for (auto i=0; i<P->size(); i++) {
-        int n = int(gen->random_uniform_long(MP->size()/15, MP->size()/5));
+        int n = int(gen->random_uniform_long(MP->size()/10, MP->size()/5));
         for (auto j=0; j<n; j++) {
             int m = gen->select_random_index(0, MP->size()-1);
             (*P)[i]->receiveCandidateMiner((*MP)[m]);

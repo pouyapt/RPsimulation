@@ -107,10 +107,11 @@ private:
     long halfMaximumMinersTime = 32100000;              // The required duration to reach the half of maximum population
     double startingPopulationToMaximumRatio = 0.002;    // population at time 0 divided by the maximum Population
     unsigned defaultNumberOfPool = 10;
-    double populationChangeRange = 0.4;
-    long populationChangeMinPhase = 604800;
-    long populationChangeMaxPhase = 1209600;
+    double populationChangeRange = 0.5;
+    long populationChangeMinPhase = 1209600;
+    long populationChangeMaxPhase = 2419200;
     double populationFunctionSteepness = 0;             // Calculated by the program
+    double steepnessChangeRange = 2;
     double maxPopulationGrowth = 0;                     // Calculated by the program
     std::string file = "Data/population_parameters.db";
     PopulationParameters();
