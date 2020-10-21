@@ -118,7 +118,7 @@ public:
             return;
         }
         adjust_index(index);
-        if (index == 0)
+        if (index==0)
             push_front(new_data);
         else {
             find_node(index);
@@ -139,7 +139,7 @@ public:
     }
     
     data_type pop_back () {
-        if (size_ == 0)
+        if (size_==0)
             return NULL;
         if (size_ == 1)
             return uninitialize();
@@ -164,7 +164,7 @@ public:
     }
     
     data_type pop_front () {
-        if (size_ == 0)
+        if (size_==0)
             return NULL;
         if (size_ == 1)
             return uninitialize();
@@ -189,7 +189,7 @@ public:
     }
     
     data_type pop (long index) {
-        if (size_ == 0)
+        if (size_==0)
             return NULL;
         if (size_ == 1)
             return uninitialize();
@@ -266,7 +266,7 @@ public:
         adjust_index(end_index);
         if (target_index >= start_index && target_index <= end_index+1)
             return;
-        if (target_index == 0)
+        if (target_index==0)
             move_front(start_index, end_index);
         else if (target_index == size_)
             move_back(start_index, end_index);
@@ -306,7 +306,7 @@ public:
         last->right = first;
         first->left = last;
         size_ = size_ - (end_index - start_index + 1);
-        if (size_ == 0)
+        if (size_==0)
             set();
         else
             reset_saved();

@@ -161,7 +161,7 @@ void Game::updateCosts() {
     Time time;
     time = gen->minig_time();
     lastGeneratedBlockTimestamp = time + T->getCurrentTime();
-    MP->processPopulationChange(time.convertToNumber(), *this);
+    MP->populationUpdate(time.convertToNumber(), *this);
     P->removeLostPools();
     lastRoundDuration = time;
     for (auto i=0; i<P->size(); i++) {

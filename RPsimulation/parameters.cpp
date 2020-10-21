@@ -33,17 +33,14 @@ double EntityParameters::getPowerConsumptionPars(std::string parameter) {
 }
 
 double EntityParameters::getPoolFeesPars(std::string parameter) {
-    if (parameter=="min")
+    if (parameter=="mean")
+        return poolFeeMean;
+    else if (parameter=="std")
+        return poolFeeStd;
+    else if (parameter=="min")
         return poolFeeMin;
     else
         return poolFeeMax;
-}
-
-double EntityParameters::getPOWreward(std::string parameter) {
-    if (parameter=="min")
-        return POWrewardMin;
-    else
-        return POWrewardMax;
 }
 
 double EntityParameters::getProbabilityConfidence(std::string parameter) {

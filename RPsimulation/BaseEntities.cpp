@@ -314,6 +314,7 @@ void Miner::initialize() {
     poolJoined = -1;
     powerConRate = 0;
     receivedInvitationsCount = 0;
+    reputationTimeOffset = 0;
     newMiner = true;
     taken = false;
     pool = NULL;
@@ -620,6 +621,8 @@ compareFunc selectCompareFunc(std::string by) {
         return &compareID;
     else if (by=="in")
         return &compareInvitationCount;
+    else if (by=="rp")
+        return &compareRep;
     else
         return &compareID;
 }
@@ -645,7 +648,7 @@ Miner* MiningPool::returnMiner(unsigned index) {
 void MiningPool::initialize() {
     name = gen->mining_pool_name();
     poolFee = gen->poolFee();
-    powReward = gen->powReward();
+    powReward = gen->poolFee();
     totalHashPower = 0;
     grossIncome = 0;
 }
@@ -907,10 +910,12 @@ void PoolManager::calculateCandidatesScore() {
 void PoolManager::processCandidateMiners() {
     if (!candidateMinersList.size())
         return;
-    for (auto i=0; i<candidateMinersList.size(); i++) {
+    for (auto i=0; i<candidateMinersList.size(); i++)
         candidateMinersList[i].expectedDailyProfit = calculateProfitForNewMiner(candidateMinersList[i].miner);
-    }
-    for (auto i=0; i<candidateMinersList.size(); i++) {
+    candidateMinersList.sort(&compareScore);
+    double hashShare = poolHashPower() / double(variableP->getCurrentTotalHashPower());
+    double n = sigmoid(hashShare, 2, -15, 0, 0) * candidateMinersList.size();
+    for (auto i=0; i<n; i++) {
         if (candidateMinersList[i].expectedDailyProfit>0) {
             candidateMinersList[i].miner->receiveInvitation(this);
             sendInvitationsCount++;

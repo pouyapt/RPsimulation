@@ -3,8 +3,10 @@
 
 MinerPopulation::MinerPopulation() {
     int population0 = 0;
-    if (!readPopulationData())
+    if (!readPopulationData()) {
         population0 = calculateInitialPopulation();
+        T->createNewModulator(populationP->populationChangeRange, populationP->populationChangeMinPhase, populationP->populationChangeMaxPhase, "maxPopulationModulator");
+    }
     updateVariableParameters();
     for (auto i=0; i<population0; i++)
         addMiner();
@@ -49,6 +51,8 @@ void MinerPopulation::updateVariableParameters() {
     variableP->current.minersPopulation = allMinersList.size();
     variableP->current.totalHashPower = totalHashPower_;
     variableP->current.inactiveMinersPopulation = removedMinersCount + removedList.size();
+    variableP->current.highestMinerReputation = highestMinerReutation;
+    variableP->current.lowestMinerReputation = lowestMinerReutation;
 }
 
 void MinerPopulation::writeMinersData(std::ofstream &out) {
@@ -71,6 +75,7 @@ void MinerPopulation::writeMinersData(std::ofstream &out) {
         out << allMinersList[i]->powIncome.convert() << std::endl;
         out << allMinersList[i]->costs.convert() << std::endl;
         out << allMinersList[i]->reputation<< std::endl;
+        out << allMinersList[i]->reputationTimeOffset<< std::endl;
         out << allMinersList[i]->violationTimeOffset << std::endl;
         out << allMinersList[i]->roundsPlayed << std::endl;
         out << allMinersList[i]->detectedViolations << std::endl;
@@ -105,6 +110,7 @@ void MinerPopulation::readMinersData(std::ifstream &in, int size) {
         in >> newItem->powIncome;
         in >> newItem->costs;
         in >> newItem->reputation;
+        in >> newItem->reputationTimeOffset;
         in >> newItem->violationTimeOffset;
         in >> newItem->roundsPlayed;
         in >> newItem->detectedViolations;
@@ -127,6 +133,8 @@ void MinerPopulation::writePopulationData () {
     pd << totalHashPower_ << std::endl;
     pd << allViolationsCount << std::endl;
     pd << detectedViolationsCount << std::endl;
+    pd << highestMinerReutation << std::endl;
+    pd << lowestMinerReutation << std::endl;
     pd << population << std::endl;
     pd << populationStage << std::endl;
     pd << variableP->current.numberOfPoolMiners << std::endl;
@@ -151,6 +159,8 @@ bool MinerPopulation::readPopulationData () {
     pd >> totalHashPower_;
     pd >> allViolationsCount;
     pd >> detectedViolationsCount;
+    pd >> highestMinerReutation;
+    pd >> lowestMinerReutation;
     pd >> population;
     pd >> populationStage;
     pd >> variableP->current.numberOfPoolMiners;
@@ -329,10 +339,11 @@ int MinerPopulation::MinersWithProfit() {
     return count;
 }
 
-void MinerPopulation::processPopulationChange(long time, const Game& game) {
+void MinerPopulation::populationUpdate(long time, const Game& game) {
     calculateNumberOfNewMiners(time);
     processMinersAddition(time);
     processMinersRemoval();
+    updateAllReputations();
 }
 
 void MinerPopulation::calculateNumberOfNewMiners(long time) {
@@ -394,11 +405,46 @@ double MinerPopulation::populationEstimate(long time) {
 }
 
 double MinerPopulation::populationGrowthPhase1(long time) {
-    return sigmoidDeravative(time, populationP->maximumMiners, populationP->populationFunctionSteepness, populationP->halfMaximumMinersTime);
+    unsigned maxPopulation = populationP->maximumMiners + populationP->maximumMiners*T->getModulatorValue("maxPopulationModulator");
+    return sigmoidDeravative(time, maxPopulation, populationP->populationFunctionSteepness, populationP->halfMaximumMinersTime);
 }
 
 double MinerPopulation::populationGrowthPhase2(long population) {
     return sigmoid(population, populationP->maxPopulationGrowth, miningP->revenueFunctionSteepness, populationP->maximumMiners*miningP->revenueFunctionZeroPoint, populationP->maxPopulationGrowth/2);
+}
+
+void MinerPopulation::updateAllReputations() {
+    for (auto i=0; i<allMinersList.size(); i++)
+        updateReputation(allMinersList[i]);
+}
+
+void MinerPopulation::updateReputation(Miner* miner) {
+    double minersMembershipDuration = minerPresenceDurationInYear(miner);
+    miner->reputation = sigmoid(minersMembershipDuration, 2, 1, miner->reputationTimeOffset, 1);
+    updateHighestLowestReputation(miner);
+}
+
+double MinerPopulation::minerPresenceDurationInYear(Miner* miner) {
+    return (T->getCurrentTime() - miner->joinTimestamp) / 31536000.0;
+}
+
+void MinerPopulation::applyNegativeReputation(Miner* miner) {
+    double minersMembershipDuration = minerPresenceDurationInYear(miner);
+    miner->reputationTimeOffset += minersMembershipDuration - log10(minersMembershipDuration);
+    updateReputation(miner);
+}
+
+void MinerPopulation::updateHighestLowestReputation(Miner* miner) {
+    if (miner->reputation > highestMinerReutation) {
+        highestMinerReutation = miner->reputation;
+        variableP->current.highestMinerReputation = highestMinerReutation;
+        return;
+    }
+    if (miner->reputation < lowestMinerReutation) {
+        lowestMinerReutation = miner->reputation;
+        variableP->current.lowestMinerReputation = lowestMinerReutation;
+        return;
+    }
 }
 
 //----------------------------------------------------------------------------------
@@ -468,6 +514,7 @@ void Pools::writePools() {
         out << poolList[i]->mined << std::endl;
         out << poolList[i]->MiningPool::poolName() << std::endl;
         out << poolList[i]->MiningPool::poolFee << std::endl;
+        out << poolList[i]->MiningPool::powReward << std::endl;
         out << poolList[i]->totalHashPower << std::endl;
         out << poolList[i]->sendInvitationsCount << std::endl;
         out << poolList[i]->MiningPool::grossIncome.convert() << std::endl;
@@ -506,6 +553,7 @@ bool Pools::readPools () {
         in >> newPM->mined;
         in >> newPM->MiningPool::poolName();
         in >> newPM->MiningPool::poolFee;
+        in >> newPM->MiningPool::powReward;
         in >> newPM->totalHashPower;
         in >> newPM->sendInvitationsCount;
         in >> newPM->MiningPool::grossIncome;

@@ -729,7 +729,9 @@ void Stats::addNewStatsToCsvFile() {
              uidlFile << snapShots[i].poolsPopulation << ",";
              uidlFile << snapShots[i].numberOfPoolMiners << ",";
              uidlFile << snapShots[i].totalRevenue.convert() << ",";
-             uidlFile << snapShots[i].totalCost.convert() << std::endl;
+             uidlFile << snapShots[i].totalCost.convert() << ",";
+             uidlFile << snapShots[i].highestMinerReputation << ",";
+             uidlFile << snapShots[i].lowestMinerReputation << std::endl;
          }
          uidlFile.close();
      }
@@ -746,6 +748,6 @@ void Stats::statFileInit() {
     if (!file_exist("stats.csv")) {
         std::ofstream out;
         out.open("stats.csv");
-        out << "unix_time" << "," << "unit_price" << "," << "units_per_block" << "," << "total_hash_power" << "," << "miners" << "," << "pools" << "," << "pool_miners" << "," << "revenue" << "," << "cost" << std::endl;
+        out << "unix_time" << "," << "unit_price" << "," << "units_per_block" << "," << "total_hash_power" << "," << "miners" << "," << "pools" << "," << "pool_miners" << "," << "revenue" << "," << "cost" << "," << "highest_reputation" << "," << "lowest_reputation" << std::endl;
     }
 }

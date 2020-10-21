@@ -211,9 +211,12 @@ public:
     }
     auto poolFee() {
         std::mt19937 gen{ran()};
-        std::uniform_int_distribution<> d(entityP->getPoolFeesPars("min"), entityP->getPoolFeesPars("max"));
-        float a = d(gen);
-        return a/1000;
+        std::normal_distribution<float> d(entityP->getPoolFeesPars("mean"), entityP->getPoolFeesPars("std"));
+        double a = 0;
+        do
+            a = d(gen);
+        while (a<entityP->getPoolFeesPars("min") || a>=entityP->getPoolFeesPars("max"));
+        return a;
     }
     auto minig_time() {
         std::mt19937 gen{ran()};

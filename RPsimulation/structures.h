@@ -13,6 +13,8 @@ private:
     long totalHashPower_ = 0;
     int allViolationsCount = 0;
     int detectedViolationsCount = 0;
+    double highestMinerReutation = 0;
+    double lowestMinerReutation = 0;
     long removedMinersCount = 0;
     int removeLostMinersCountdown = 0;
     double population = 0;
@@ -45,6 +47,10 @@ private:
     double populationEstimate(long time);
     double populationGrowthPhase1(long seconds);
     double populationGrowthPhase2(long population);
+    void updateReputation(Miner* miner);
+    void updateAllReputations();
+    double minerPresenceDurationInYear(Miner* miner);
+    void updateHighestLowestReputation(Miner* miner);
 public:
     static MinerPopulation& instance() {
         static MinerPopulation instance;
@@ -65,10 +71,11 @@ public:
     void printPopulationStat();
     void writeMinersInvitations(Pools* P);
     void readMinersInvitations(Pools* P);
-    void processPopulationChange(long time, const Game& game);
+    void populationUpdate(long time, const Game& game);
     int topHashPower();
     int MinersWithAtLeastOneBlock();
     int MinersWithProfit();
+    void applyNegativeReputation(Miner* miner);
 };
 
 //--------------------------------------------------------------------------------

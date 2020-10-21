@@ -4,8 +4,8 @@
 int main() {
     
     PoolJoin* PJ = &PoolJoin::instance();
-    MinerPopulation* MP = &MinerPopulation::instance();
-    Pools* P = &Pools::instance();
+//    MinerPopulation* MP = &MinerPopulation::instance();
+//    Pools* P = &Pools::instance();
     Game* G = &Game::instance();
     Stats* S = &Stats::instance();
 
@@ -17,12 +17,12 @@ int main() {
             PJ->run();
         }
     }
-    
-    
-    
+
+
+
     S->printCurrentStats();
-    //MP->sort("in");
-    //MP->printActiveMiners();
-    P->print();
+//    MP->sort("rp");
+//    MP->printActiveMiners();
+//    P->print();
     
 }

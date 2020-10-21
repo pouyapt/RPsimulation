@@ -98,6 +98,7 @@ private:
     std::time_t joinTimestamp;
     std::time_t quitTimestamp;
     double reputation;
+    double reputationTimeOffset; // If violation is detected a negative time offset is added which will reduce the reputation.
     int hashPower;
     int detectedViolations;
     int allViolations;
@@ -223,6 +224,7 @@ class MiningPool {
 protected:
     core::list<Miner*> miners;
     std::string name;
+    EntityParameters* entityP = &EntityParameters::instance();
     core::Random* gen = &core::Random::instance();
     void initialize();
     unsigned int totalHashPower;

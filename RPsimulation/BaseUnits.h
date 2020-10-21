@@ -185,8 +185,8 @@ private:
         double costRewardRatio = 0;
         int numberOfPoolMiners = 0;
         int MinersWithAtLeastOneBlock = 0;
-        int highestMinerReputation = 0;
-        int lowestMinerReputation = 0;
+        double highestMinerReputation = 0;
+        double lowestMinerReputation = 0;
         int numberOfAllViolations = 0;
         int numberOfDetectedViolations = 0;
         Money totalRevenue = 0;
