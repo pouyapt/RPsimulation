@@ -21,6 +21,30 @@ char* asctime_ct(const struct tm *timeptr) {
   return result;
 }
 
+std::string moneyFormat(double amount) {
+    std::string m;
+    bool negative = amount < 0;
+    amount = abs(amount);
+    int whole = int(amount);
+    double fraction = amount - whole;
+    int fraction_int = fraction*100;
+    if (fraction_int<10)
+        m += std::to_string(whole) + ".0" + std::to_string(fraction_int);
+    else
+        m += std::to_string(whole) + "." + std::to_string(fraction_int);
+    int count = 0;
+    for (auto i=m.size()-3; i>1; i--) {
+        count++;
+        if (count==3) {
+            m.insert(i-1, ",");
+            count = 0;
+        }
+    }
+    if (negative && fraction_int)
+        m.insert(0, "-");
+    return m + " $";
+}
+
 double atLeastOneOccurencePerNTrial(double probability, int noOfTrials) {
     return 1 - pow(1-probability, noOfTrials);
 }

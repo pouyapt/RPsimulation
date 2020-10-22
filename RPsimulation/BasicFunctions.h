@@ -13,6 +13,7 @@
 
 bool file_exist(const char *fileName);
 char* asctime_ct(const struct tm *timeptr);
+std::string moneyFormat(double amount);
 void databaseInit();
 double round_(double var);
 double atLeastOneOccurencePerNTrial(double px, int n);
