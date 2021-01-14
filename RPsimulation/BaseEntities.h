@@ -15,7 +15,7 @@ struct poolEvaluation {
 };
 
 struct machine {
-    std::string name;
+    char name[20];
     double hashRate;
     int wattage;
 };
@@ -91,7 +91,7 @@ public:
 
 class Miner {
 private:
-    Miner(std::string option=" ");
+    Miner(char option='r');
     std::string firstName;
     std::string lastName;
     long idValue;
@@ -121,25 +121,28 @@ private:
     Money powerConRate;
     Money lossTolerance;
     bool soloMinigNotProfitable = true;
+    bool corrupted = false;
     struct machine m;
     double probabilityConfidence;
     int receivedInvitationsCount;
-    void initialize();
-    void generateInitialValues();
-    void powerCostCalculator();
-    bool poolCommitmentTimeIsOver();
+    core::list<poolEvaluation> invitations;
     PoolManager* pool;
     VirtualTime* T = &VirtualTime::instance();
     core::Random* gen = &core::Random::instance();
     MiningParameters* miningP = &MiningParameters::instance();
     Stats* variableP = &Stats::instance();
-    core::list<poolEvaluation> invitations;
     Money estimateSoloMiningProfit();
     Money estimatePoolProfit(PoolManager* PM, bool newPool=true);
     bool loseIfMineSolo(Money dailyCost, Money dailyProfit, Money reward);
+    void initialize();
+    void resetGlobalPars();
+    void generateInitialValues();
+    void powerCostCalculator();
+    bool poolCommitmentTimeIsOver();
 public:
     friend class MinerPopulation;
     friend class Game;
+    friend class BW_Attack;
     friend bool compareID(Miner* a, Miner* b);
     friend bool compareDfact(Miner* a, Miner* b);
     friend bool compareMiningPower(Miner* a, Miner* b);
@@ -222,6 +225,7 @@ bool compareHash(PoolManager* a, PoolManager* b);
 
 class MiningPool {
 protected:
+    friend bool compareMiningPower(Miner* a, Miner* b);
     core::list<Miner*> miners;
     std::string name;
     EntityParameters* entityP = &EntityParameters::instance();
@@ -291,6 +295,8 @@ public:
     std::string poolName();
     unsigned int poolHashPower();
     double poolFee();
+    double poolPowReward();
+    double getHashShare();
     Money poolRewards();
     bool isOpenToNewMiners();
     long getIndex();
@@ -307,6 +313,7 @@ public:
     void printPoolMiners();
     void printCandidateMiners();
     void clearMinersCandidateList();
+    void sortMiners(std::string by="");
 };
 
 //--------------------------------------------------------------------------------

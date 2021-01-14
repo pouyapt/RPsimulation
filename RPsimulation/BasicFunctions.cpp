@@ -12,13 +12,13 @@ void databaseInit() {
 }
 
 char* asctime_ct(const struct tm *timeptr) {
-  static const char mon_name[][4] = {
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-  };
-  static char result[26];
-  sprintf(result, "%.3s%3d, %d - %.2d:%.2d\n", mon_name[timeptr->tm_mon], timeptr->tm_mday, 1900 + timeptr->tm_year, timeptr->tm_hour, timeptr->tm_min);
-  return result;
+    static const char mon_name[][4] = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    };
+    static char result[26];
+    sprintf(result, "%.3s%3d, %d - %.2d:%.2d\n", mon_name[timeptr->tm_mon], timeptr->tm_mday, 1900 + timeptr->tm_year, timeptr->tm_hour, timeptr->tm_min);
+    return result;
 }
 
 std::string moneyFormat(double amount) {
@@ -62,7 +62,6 @@ int noOfRequiredTrials(double probability, double targetProbability) {
 double calculatePopulationGrowth(unsigned p, unsigned m, double k) {
     return k*(1-(double(p)/double(m)));
 }
-
 
 double sigmoid(double variable, double MaxValue, double steepness, double midPoint, double offset) {
     return (MaxValue / (1+exp(-1*steepness*(variable-midPoint)))) - offset;

@@ -3,6 +3,19 @@
 
 #include "structures.h"
 
+struct AttackGroup {
+    AttackGroup() {
+        victim = nullptr;
+        suspect = nullptr;
+        bribedMiner = nullptr;
+        winnerMiner = nullptr;
+    }
+    PoolManager* victim;
+    PoolManager* suspect;
+    Miner* bribedMiner;
+    Miner* winnerMiner;
+};
+
 class PoolJoin {
 public:
     static PoolJoin& instance() {
@@ -29,6 +42,25 @@ private:
 };
 
 //--------------------------------------------------------------------------------
+
+class BW_Attack {
+private:
+    core::list<AttackGroup> list;
+    core::Random* gen = &core::Random::instance();
+    MinerPopulation* MP = &MinerPopulation::instance();
+    Pools* P = &Pools::instance();
+    bool assignVictim_Suspect();
+    bool selectMinerFromVictimPool();
+    bool selectMinerFromSuspectPool();
+    bool minerIsCorrupt(Miner* miner);
+    int getBribedMiner(Miner* miner);
+    Money calculateBribe(Money reward, Miner* miner);
+public:
+    bool initializeAttackEntities();
+    bool processAttack(Miner* miner, Money reward);
+};
+
+//---------------------------------------------------------------------------------
 
 class Game {
 private:

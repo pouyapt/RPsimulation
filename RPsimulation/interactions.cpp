@@ -227,5 +227,105 @@ double Game::costRewardRatio(long population) {
     return sigmoid(population, miningP->revenueRangeFactor, miningP->revenueFunctionSteepness, populationP->maximumMiners*modulatedRevenueZeroPoint, miningP->revenueRangeFactor*0.45);
 }
 
+//-------------------------------------------------------------------------------------
 
+bool BW_Attack::assignVictim_Suspect() {
+    if (P->size() <= 1)
+        return false;
+    int r1,r2;
+    do {
+        r1 = gen->select_random_index(0, P->size()-1);
+        r2 = gen->select_random_index(0, P->size()-1);
+    }
+    while (r1==r2);
+    if ((*P)[r1]->size()==0 || (*P)[r2]->size()==0)
+        return false;
+    if ((*P)[r1]->getHashShare() < 15 && (*P)[r2]->getHashShare() < 15)
+        return false;
+    PoolManager* v;
+    PoolManager* s;
+    if ((*P)[r1]->getHashShare() > (*P)[r2]->getHashShare()) {
+        v = (*P)[r1];
+        s = (*P)[r2];
+    }
+    else {
+        v = (*P)[r2];
+        s = (*P)[r1];
+    }
+    AttackGroup temp;
+    temp.suspect = s;
+    temp.victim = v;
+    list.push_back(temp);
+    return true;
+}
+
+bool BW_Attack::selectMinerFromVictimPool() {
+    list.end().victim->sortMiners("mp");
+    for (int i=0; i<3; i++) {
+        if (minerIsCorrupt(list.end().victim->getMiner(i))) {
+            list.end().bribedMiner = list.end().victim->getMiner(i);
+            return true;
+        }
+    }
+    list.pop_back();
+    return false;
+}
+
+bool BW_Attack::selectMinerFromSuspectPool() {
+    list.end().winnerMiner = list.end().suspect->getMiner(0);
+    return true;
+}
+
+bool BW_Attack::minerIsCorrupt(Miner* miner) {
+    double r = gen->select_random_index(0, 99) / 100.0;
+    if (r <= miner->dishonestyFactor)
+        return true;
+    return false;
+}
+
+int BW_Attack::getBribedMiner(Miner* miner) {
+    for (int i=0; i<list.size(); i++) {
+        if (miner==list[i].bribedMiner)
+            return i;
+    }
+    return -1;
+}
+
+bool BW_Attack::initializeAttackEntities() {
+    if (!assignVictim_Suspect())
+        return false;
+    if (!selectMinerFromVictimPool())
+        return false;
+    selectMinerFromSuspectPool();
+    return true;
+}
+
+Money BW_Attack::calculateBribe(Money reward, Miner* miner) {
+    Money poolFee, powReward;
+    poolFee = reward * miner->pool->poolFee();
+    reward = reward - poolFee;
+    powReward = reward * miner->pool->poolPowReward();
+    reward = reward - powReward;
+    Money minerReward;
+    double r = double(miner->hashPower) / double(miner->pool->poolHashPower());
+    minerReward = reward * r;
+    minerReward += powReward;
+    Money bribe;
+    bribe = minerReward + (minerReward*0.1);
+    return bribe;
+}
+
+bool BW_Attack::processAttack(Miner* miner, Money reward) {
+    int i = getBribedMiner(miner);
+    if (i==-1)
+        return false;
+    else {
+        Money bribe;
+        bribe = calculateBribe(reward, miner);
+        reward -= bribe;
+        list[i].bribedMiner->receivePowRewards(bribe);
+        list[i].suspect->receiveReward(reward, list.end().winnerMiner);
+    }
+    return true;
+}
 

@@ -10,7 +10,7 @@ private:
     int miningPowerStd = 6976;
     int miningPowerMin = 8;
     int miningPowerLowRange = 72;
-    int dishonestyFactorMean = 0;
+    int dishonestyFactorMean = 15;
     int dishonestyFactorStd = 10;
     int dishonestyFactorMin = 0;
     double powerConsumptionMean = 0.065; //cents for kilowatt per hour
@@ -103,15 +103,14 @@ public:
 
 class PopulationParameters {
 private:
-    unsigned maximumMiners = 90000;                     //Maximum Population (numerator of Sigmoid function)
+    unsigned maximumMiners = 20000;                     //Maximum Population (numerator of Sigmoid function)
     long halfMaximumMinersTime = 32100000;              // The required duration to reach the half of maximum population
     double startingPopulationToMaximumRatio = 0.002;    // population at time 0 divided by the maximum Population
-    unsigned defaultNumberOfPool = 10;
-    double populationChangeRange = 0.5;
-    long populationChangeMinPhase = 1209600;
-    long populationChangeMaxPhase = 2419200;
+    unsigned defaultNumberOfPool = 6;
+    double growthRandomnessRange = 1.5;
+    long growthRandomnessRangeMinPhase = 1209600;
+    long growthRandomnessRangeMaxPhase = 2419200;
     double populationFunctionSteepness = 0;             // Calculated by the program
-    double steepnessChangeRange = 2;
     double maxPopulationGrowth = 0;                     // Calculated by the program
     std::string file = "Data/population_parameters.db";
     PopulationParameters();

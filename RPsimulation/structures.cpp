@@ -5,8 +5,7 @@ MinerPopulation::MinerPopulation() {
     int population0 = 0;
     if (!readPopulationData()) {
         population0 = calculateInitialPopulation();
-        T->createNewModulator(populationP->populationChangeRange, populationP->populationChangeMinPhase, populationP->populationChangeMaxPhase, "maxPopulationModulator");
-        T->createNewModulator(populationP->populationChangeRange, populationP->populationChangeMinPhase, populationP->populationChangeMaxPhase, "populationGowthSteepnessModulator");
+        T->createNewModulator(populationP->growthRandomnessRange, populationP->growthRandomnessRangeMinPhase, populationP->growthRandomnessRangeMaxPhase, "growthRandomness");
     }
     updateVariableParameters();
     for (auto i=0; i<population0; i++)
@@ -39,7 +38,7 @@ long MinerPopulation::totalHashPower() {
 int MinerPopulation::getAllViolationsCount() {
     unsigned int sum = 0;
     for (auto i=0; i<allMinersList.size(); i++) {
-        sum +=allMinersList[i]->allViolations;
+        sum += allMinersList[i]->allViolations;
     }
     return sum;
 }
@@ -54,6 +53,14 @@ void MinerPopulation::updateVariableParameters() {
     variableP->current.inactiveMinersPopulation = removedMinersCount + removedList.size();
     variableP->current.highestMinerReputation = highestMinerReutation;
     variableP->current.lowestMinerReputation = lowestMinerReutation;
+}
+
+void MinerPopulation::resetGlobalParameters() {
+    populationP = &PopulationParameters::instance();
+    miningP = &MiningParameters::instance();
+    gen = &core::Random::instance();
+    variableP = &Stats::instance();
+    T = &MasterTime::instance();
 }
 
 void MinerPopulation::writeMinersData(std::ofstream &out) {
@@ -75,8 +82,9 @@ void MinerPopulation::writeMinersData(std::ofstream &out) {
         out << allMinersList[i]->poolIncome.convert() << std::endl;
         out << allMinersList[i]->powIncome.convert() << std::endl;
         out << allMinersList[i]->costs.convert() << std::endl;
-        out << allMinersList[i]->reputation<< std::endl;
-        out << allMinersList[i]->reputationTimeOffset<< std::endl;
+        out << allMinersList[i]->corrupted << std::endl;
+        out << allMinersList[i]->reputation << std::endl;
+        out << allMinersList[i]->reputationTimeOffset << std::endl;
         out << allMinersList[i]->violationTimeOffset << std::endl;
         out << allMinersList[i]->roundsPlayed << std::endl;
         out << allMinersList[i]->detectedViolations << std::endl;
@@ -92,7 +100,7 @@ void MinerPopulation::writeMinersData(std::ofstream &out) {
 
 void MinerPopulation::readMinersData(std::ifstream &in, int size) {
     for (auto i=0; i<size; i++) {
-        Miner* newItem = new Miner("blank");
+        Miner* newItem = new Miner('b');
         in >> newItem->firstName;
         in >> newItem->lastName;
         in >> newItem->idValue;
@@ -110,6 +118,7 @@ void MinerPopulation::readMinersData(std::ifstream &in, int size) {
         in >> newItem->poolIncome;
         in >> newItem->powIncome;
         in >> newItem->costs;
+        in >> newItem->corrupted;
         in >> newItem->reputation;
         in >> newItem->reputationTimeOffset;
         in >> newItem->violationTimeOffset;
@@ -178,6 +187,7 @@ bool MinerPopulation::readPopulationData () {
     md.close();
     return true;
 }
+
 
 void MinerPopulation::writeRemovedMiners() {
     if (removedList.empty())
@@ -348,18 +358,19 @@ void MinerPopulation::populationUpdate(long time, const Game& game) {
 }
 
 void MinerPopulation::calculateNumberOfNewMiners(long time) {
+    double growth = 0;
     if (populationStage==false) {
-        double growth = 0;
         for (auto i=1; i<time; i++) {
             growth = populationGrowthPhase1(T->getCurrentTime()+i);
-            population += growth;
+            population += growth + growth*T->getModulatorValue("growthRandomness");
         }
         if (T->getCurrentTime() > populationP->halfMaximumMinersTime && growth < populationP->maxPopulationGrowth/2)
             populationStage = true;
     }
     else {
         for (auto i=1; i<time; i++) {
-            population += populationGrowthPhase2(allMinersList.size());
+            growth = populationGrowthPhase2(allMinersList.size());
+            population += growth + growth*T->getModulatorValue("growthRandomness");
         }
     }
 }
@@ -380,7 +391,7 @@ int MinerPopulation::calculateInitialPopulation() {
 void MinerPopulation::processMinersRemoval() {
     if (removeLostMinersCountdown==0) {
         removeLostMiners();
-        removeLostMinersCountdown = int(gen->random_uniform_long(80, 300));
+        removeLostMinersCountdown = int(gen->random_uniform_long(20, 100));
     }
     else {
         removeLostMinersCountdown--;
@@ -406,9 +417,7 @@ double MinerPopulation::populationEstimate(long time) {
 }
 
 double MinerPopulation::populationGrowthPhase1(long time) {
-    unsigned maxPopulation = populationP->maximumMiners + populationP->maximumMiners*T->getModulatorValue("maxPopulationModulator");
-    double steepness = populationP->populationFunctionSteepness + populationP->populationFunctionSteepness*T->getModulatorValue("populationGowthSteepnessModulator");
-    return sigmoidDeravative(time, maxPopulation, steepness, populationP->halfMaximumMinersTime);
+    return sigmoidDeravative(time, populationP->maximumMiners, populationP->populationFunctionSteepness, populationP->halfMaximumMinersTime);
 }
 
 double MinerPopulation::populationGrowthPhase2(long population) {

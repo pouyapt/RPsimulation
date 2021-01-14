@@ -24,17 +24,13 @@ private:
     node* savedB;
     long savedB_i;
     bool save_turn;
-    int objectID;
-    static int currentObject;
-    static bool d_compare(data_type a, data_type b) {
+    bool d_compare(data_type a, data_type b) {
         return (a<b ? true : false);
     }
     bool (*compare)(data_type, data_type);
 public:
     list () {
         set();
-        currentObject++;
-        objectID = currentObject;
     }
     
     list (unsigned size__) {
@@ -84,10 +80,6 @@ public:
             return false;
     }
 
-    auto get_objectID() {
-        return objectID;
-    }
-    
     data_type& begin () {
         return first->data;
     }
@@ -139,8 +131,10 @@ public:
     }
     
     data_type pop_back () {
-        if (size_==0)
-            return NULL;
+        if (size_==0) {
+            data_type temp = data_type();
+            return temp;
+        }
         if (size_ == 1)
             return uninitialize();
         node* temp = last;
@@ -331,7 +325,6 @@ public:
         savedB = target.savedB;
         savedB_i = target.savedB_i;
         save_turn = target.save_turn;
-        objectID = target.objectID;
         compare = target.compare;
         target.set();
     }
@@ -351,7 +344,7 @@ public:
         target.set();
     }
     
-    void sort(bool c_compare(data_type,data_type)=d_compare) {
+    void sort(bool c_compare(data_type,data_type)) {
         compare = c_compare;
         mergeSort(*this, 0, size_-1);
     }
@@ -588,8 +581,6 @@ private:
     
 };
 
-template <class data_type>
-int list<data_type>::currentObject = 0;
 
 };
 

@@ -225,9 +225,9 @@ void MasterTime::addModValuesToCsvFile() {
 
 //----------------------------------------------------------------------------------
 
-Miner::Miner(std::string option) {
+Miner::Miner(char option) {
     initialize();
-    if (option=="blank")
+    if (option=='b')
         return;
     generateInitialValues();
 }
@@ -320,6 +320,16 @@ void Miner::initialize() {
     pool = NULL;
 }
 
+void Miner::resetGlobalPars() {
+    T = &VirtualTime::instance();
+    gen = &core::Random::instance();
+    miningP = &MiningParameters::instance();
+    variableP = &Stats::instance();
+    pool = NULL;
+    taken = false;
+    invitations.clear();
+}
+
 void Miner::generateInitialValues() {
     firstName = gen->name();
     lastName = gen->name();
@@ -366,7 +376,7 @@ void Miner::print() {
     std::cout << "Join Time:        " << convertToDate_Time(joinTimestamp);
     std::cout << "Hash Rate:        " << hashPower << " TH/S" << std::endl;
     std::cout << "Reputation:       " << reputation << std::endl;
-    //std::cout << "DH Factor:      " << dishonestyFactor << std::endl;
+    std::cout << "DH Factor:        " << dishonestyFactor << std::endl;
     std::cout << "Power Rate:       " << powerConRate*-1 << " per KW" << std::endl;
     std::cout << "Power Cost:       " << powerCostPerHour*-1 << " per Hour" << std::endl;
     std::cout << "Es. Daily Profit: " << estimateSoloMiningProfit() << std::endl;
@@ -771,6 +781,10 @@ double PoolManager::poolFee() {
     return MiningPool::poolFee;
 }
 
+double PoolManager::poolPowReward() {
+    return MiningPool::powReward;
+}
+
 Money PoolManager::poolRewards() {
     return MiningPool::grossIncome;
 }
@@ -789,6 +803,10 @@ bool PoolManager::isOpenToNewMiners() {
 
 long PoolManager::getIndex() {
     return index;
+}
+
+void PoolManager::sortMiners(std::string by) {
+    miners.sort(selectCompareFunc(by));
 }
 
 void PoolManager::receiveReward(Money amount, Miner* miner) {
@@ -873,12 +891,16 @@ void PoolManager::print() {
     std::cout << "POW Award:            " << MiningPool::powReward*100 << "%\n";
     std::cout << "Miners Count:         " << size() << std::endl;
     std::cout << "Hash Power:           " << poolHashPower() << std::endl;
-    std::cout << "Hash Share:           " << double(poolHashPower()) / double(variableP->getCurrentTotalHashPower())*100 << "%\n";
+    std::cout << "Hash Share:           " << getHashShare() << "%\n";
     std::cout << "Income:               " << income << std::endl;
     std::cout << "Costs:                " << cost << std::endl;
     std::cout << "Mined Blocks Count:   " << mined << std::endl;
     std::cout << "Loss Tolerance:       " << lossTolerance << std::endl;
     std::cout << "------------------------------------------\n";
+}
+
+double PoolManager::getHashShare() {
+    return double(poolHashPower()) / double(variableP->getCurrentTotalHashPower())*100;
 }
 
 void PoolManager::printPoolMiners() {
@@ -929,11 +951,10 @@ void PoolManager::clearMinersCandidateList() {
 }
 
 double PoolManager::calculateProfitForNewMiner(Miner* miner) {
-    double px0 = double(totalHashPower) / double(variableP->getCurrentTotalHashPower());
-    double px1 = (double(totalHashPower)+miner->getHashPower()) / double(variableP->getCurrentTotalHashPower());
+    double px = miner->getHashPower() / double(variableP->getCurrentTotalHashPower());
     int n = 86400 / miningP->getAverageMiningTime();
     double maxDailyRevenue = n * variableP->getUnitPrice().convert() * variableP->getUnitPerNewBlock();
-    double p = maxDailyRevenue*poolFee()*(px1 - px0) - costPerMiner.convert()*24;;
+    double p = maxDailyRevenue*poolFee()*px - costPerMiner.convert()*24;;
     return p;
 }
 
@@ -946,6 +967,7 @@ void PoolManager::releaseAllMiners() {
         releaseMiner(miners[i]);
     }
 }
+
 
 //----------------------------------------------------------------------------------
 

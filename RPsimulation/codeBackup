@@ -1,0 +1,53 @@
+
+void MinerPopulation::writeMinersData(std::ofstream &out) {
+    for (auto i=0; i<allMinersList.size(); i++) {
+        out.write(reinterpret_cast<char*>(allMinersList[i]), sizeof(Miner));
+    }
+}
+
+void MinerPopulation::readMinersData(std::ifstream &in, int size) {
+    allMinersList.clear();
+    in.seekg(0, std::ios::end);
+    long p = in.tellg();
+    long size_ = p / sizeof(Miner);
+    in.seekg(0, std::ios::beg);
+    for (auto i=0; i<size_; i++) {
+        Miner* newItem = new Miner('b');
+        in.read(reinterpret_cast<char*>(newItem), sizeof(Miner));
+        newItem->resetGlobalPars();
+        allMinersList.push_back(newItem);
+    }
+}
+
+void MinerPopulation::writePopulationData () {
+    std::ofstream pd(populationDataFile, std::ios::binary);
+    if (pd.is_open())
+        pd.write(reinterpret_cast<char*>(this), sizeof(this));
+    pd.close();
+    std::ofstream md(minersDataFile, std::ios::binary);
+    if (md.is_open())
+        writeMinersData(md);
+    md.close();
+    std::cout << "The miner database has been saved." << std::endl;
+}
+
+bool MinerPopulation::readPopulationData () {
+    std::ifstream pd(populationDataFile, std::ios::binary);
+    if (pd.is_open())
+        pd.read(reinterpret_cast<char*>(this), sizeof(this));
+    else {
+        std::cout << "The population data file did not open." << std::endl;
+        return false;
+    }
+    pd.close();
+    resetGlobalParameters();
+    std::ifstream md(minersDataFile, std::ios::binary);
+    if (md.is_open())
+        readMinersData(md,0);
+    else {
+        std::cout << "The miners data file did not open." << std::endl;
+        return false;
+    }
+    md.close();
+    return true;
+}

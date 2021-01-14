@@ -8,8 +8,6 @@ class MinerPopulation {
 private:
     MinerPopulation();
     ~MinerPopulation();
-    core::list<Miner*> allMinersList;
-    core::list<Miner*> removedList;
     long totalHashPower_ = 0;
     int allViolationsCount = 0;
     int detectedViolationsCount = 0;
@@ -19,12 +17,13 @@ private:
     int removeLostMinersCountdown = 0;
     double population = 0;
     bool populationStage = 0;
-    std::string populationDataFile = "Data/p_data.db";
-    std::string minersDataFile = "Data/p_list.db";
-    std::string removedMinersDataFile = "Data/p_list_removed.db";
+    char populationDataFile[30] = "Data/p_data.db";
+    char minersDataFile[30] = "Data/p_list.db";
+    char removedMinersDataFile[30] = "Data/p_list_removed.db";
     void writeMinersData(std::ofstream &out);
     void readMinersData(std::ifstream &in, int size);
     void writePopulationData();
+    void resetGlobalParameters();
     bool readPopulationData();
     void writeRemovedMiners();
     void addMiner(long time=0);
@@ -51,6 +50,8 @@ private:
     void updateAllReputations();
     double minerPresenceDurationInYear(Miner* miner);
     void updateHighestLowestReputation(Miner* miner);
+    core::list<Miner*> allMinersList;
+    core::list<Miner*> removedList;
 public:
     static MinerPopulation& instance() {
         static MinerPopulation instance;

@@ -29,12 +29,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		9203EDDF258BB7F400D51AA0 /* minerMachines.db */ = {isa = PBXFileReference; lastKnownFileType = text; name = minerMachines.db; path = Source/minerMachines.db; sourceTree = "<group>"; };
 		921F5D4024C3B21D00970137 /* structures.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = structures.cpp; sourceTree = "<group>"; };
 		921F5D4124C3B21D00970137 /* structures.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = structures.h; sourceTree = "<group>"; };
 		923B84B924F82BC6002BF4A4 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		925F2E112453BD3F000FA1DF /* BaseEntities.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = BaseEntities.cpp; sourceTree = "<group>"; };
 		9279C8CE24D8BF39007197D4 /* parameters.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = parameters.cpp; sourceTree = "<group>"; };
 		9279C8CF24D8BF39007197D4 /* parameters.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = parameters.h; sourceTree = "<group>"; };
+		927DB7A22549F77900BC8BDD /* codeBackup */ = {isa = PBXFileReference; lastKnownFileType = text; path = codeBackup; sourceTree = "<group>"; };
 		928CC37124B4EC60000788F9 /* interactions.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = interactions.cpp; sourceTree = "<group>"; };
 		928CC37224B4EC60000788F9 /* interactions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = interactions.h; sourceTree = "<group>"; };
 		92ADCBFD2448E3A700BC2F59 /* listDS.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = listDS.h; sourceTree = "<group>"; };
@@ -77,6 +79,8 @@
 		92BB30332447BAF2006EDB1E /* RPsimulation */ = {
 			isa = PBXGroup;
 			children = (
+				9203EDDF258BB7F400D51AA0 /* minerMachines.db */,
+				927DB7A22549F77900BC8BDD /* codeBackup */,
 				92F9EDA224E99402009ED6D9 /* BasicFunctions.h */,
 				92F9EDA124E99402009ED6D9 /* BasicFunctions.cpp */,
 				9279C8CF24D8BF39007197D4 /* parameters.h */,
