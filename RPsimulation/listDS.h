@@ -158,8 +158,10 @@ public:
     }
     
     data_type pop_front () {
-        if (size_==0)
-            return NULL;
+        if (size_==0) {
+            data_type temp = data_type();
+            return temp;
+        }
         if (size_ == 1)
             return uninitialize();
         node* temp = first;
@@ -183,8 +185,10 @@ public:
     }
     
     data_type pop (long index) {
-        if (size_==0)
-            return NULL;
+        if (size_==0) {
+            data_type temp = data_type();
+            return temp;
+        }
         if (size_ == 1)
             return uninitialize();
         adjust_index(index);

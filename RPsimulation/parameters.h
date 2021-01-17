@@ -10,8 +10,8 @@ private:
     int miningPowerStd = 6976;
     int miningPowerMin = 8;
     int miningPowerLowRange = 72;
-    int dishonestyFactorMean = 15;
-    int dishonestyFactorStd = 10;
+    int dishonestyFactorMean = 5;
+    int dishonestyFactorStd = 5;
     int dishonestyFactorMin = 0;
     double powerConsumptionMean = 0.065; //cents for kilowatt per hour
     double powerConsumptionStd = 0.015;
@@ -72,7 +72,7 @@ private:
     int miningTimeMean = 600;         // Average mining time for a New Block
     int miningTimeStd = 300;          // Standard Diviation for time for a New Block
     double minerMachinePricePerHash = 35;     // Average price for a mining machine with 1Th/s hash power
-    double revenueRangeFactor = 0.4;      // The max range of ratio between rewards and costs (sigmoid Function parameter)
+    double revenueRangeFactor = 0.65;      // The max range of ratio between rewards and costs (sigmoid Function parameter)
     double revenueFunctionSteepness = 0;   // Steepness (sigmoid Function parameter)
     double revenueFunctionZeroPoint = 0.78;// This value is multiplied by Maximum Population
     double priceFluctuationRange = 0.4;   // The maximum range for the price modulater random sine fuction
@@ -128,6 +128,12 @@ public:
     friend class MinerPopulation;
     friend class Pools;
     friend class Game;
+};
+
+//----------------------------------------------------------------------------------
+
+class BwAttackParameters {
+    
 };
 
 //----------------------------------------------------------------------------------

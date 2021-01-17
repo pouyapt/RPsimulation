@@ -5,10 +5,11 @@ bool file_exist(const char *fileName) {
     return infile.good();
 }
 
-void databaseInit() {
-    if (!file_exist("Data")) {
+void folder() {
+    if (!file_exist("Data"))
         system("mkdir Data");
-    }
+    if (!file_exist("Output"))
+        system("mkdir Output");
 }
 
 char* asctime_ct(const struct tm *timeptr) {

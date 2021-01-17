@@ -14,7 +14,7 @@
 bool file_exist(const char *fileName);
 char* asctime_ct(const struct tm *timeptr);
 std::string moneyFormat(double amount);
-void databaseInit();
+void folder();
 double round_(double var);
 double atLeastOneOccurencePerNTrial(double px, int n);
 int noOfRequiredTrials(double px, double targetP);

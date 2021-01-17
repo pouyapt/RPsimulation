@@ -107,6 +107,7 @@ bool Game::ReadGameFile() {
     in >> modulatedUnitPrice;
     in >> unitsPerBlock;
     in >> priceModulatorIndex;
+    in >> dishonestActivitiesCount;
     in.close();
     return true;
 }
@@ -124,6 +125,7 @@ void Game::WriteGameFile() {
     out << modulatedUnitPrice.convert() << std::endl;
     out << unitsPerBlock << std::endl;
     out << priceModulatorIndex << std::endl;
+    out << dishonestActivitiesCount << std::endl;
     out.close();
     std::cout << "The game data has been saved." << std::endl;
 }
@@ -137,6 +139,7 @@ void Game::updateVariableParameters() {
     variableP->current.unitPerNewBlock = unitsPerBlock;
     variableP->current.costRewardRatio = currentCostRewardRatio;
     variableP->current.lastGeneratedBlockTime = lastGeneratedBlockTimestamp.convertToNumber();
+    variableP->current.dishonestActivitiesCount = dishonestActivitiesCount;
 }
 
 Miner* Game::winerMiner() {
@@ -188,12 +191,15 @@ void Game::mine() {
     Money reward;
     reward = modulatedUnitPrice * unitsPerBlock;
     updateCosts();
+    BW->initializeAttackEntities();
     Miner* winner = winerMiner();
     if (winner->isInPool()==false)
         winner->receivePowRewards(reward);
-    else
+    else {
+        if (BW->processAttack(winner, reward))
+            dishonestActivitiesCount++;
         winner->pool->receiveReward(reward, winner);
-    winner->mined++;
+    }
     totalNetworkRevenue += reward;
     updateVariableParameters();
     updateUnitPrice();
@@ -229,7 +235,53 @@ double Game::costRewardRatio(long population) {
 
 //-------------------------------------------------------------------------------------
 
-bool BW_Attack::assignVictim_Suspect() {
+BW_Attack::BW_Attack() {
+    read();
+}
+
+BW_Attack::~BW_Attack() {
+    write();
+}
+
+void BW_Attack::write() {
+    std::ofstream out;
+    out.open(filename);
+    MP->saveIndex();
+    P->saveIndex();
+    out << BW->list.size() << std::endl;
+    for (int i=0; i<BW->list.size(); i++) {
+        out << BW->list[i].suspect->getIndex() << std::endl;
+        out << BW->list[i].victim->getIndex() << std::endl;
+        out << BW->list[i].bribedMiner->getIndex() << std::endl;
+    }
+    out.close();
+    std::cout << "The BW_Attack data has been saved." << std::endl;
+}
+
+void BW_Attack::read() {
+    std::ifstream in;
+    in.open(filename);
+    if (in.fail()) {
+        std::cout << "The BW_Attack data file did not open." << std::endl;
+        return;
+    }
+    AttackGroup temp;
+    int i;
+    int size;
+    in >> size;
+    while (size) {
+        in >> i;
+        temp.suspect = (*P)[i];
+        in >> i;
+        temp.victim = (*P)[i];
+        in >> i;
+        temp.bribedMiner = (*MP)[i];
+        BW->list.push_back(temp);
+        size--;
+    }
+}
+
+bool BW_Attack::assignVictim() {
     if (P->size() <= 1)
         return false;
     int r1,r2;
@@ -255,25 +307,24 @@ bool BW_Attack::assignVictim_Suspect() {
     AttackGroup temp;
     temp.suspect = s;
     temp.victim = v;
-    list.push_back(temp);
+    BW->list.push_back(temp);
     return true;
 }
 
 bool BW_Attack::selectMinerFromVictimPool() {
-    list.end().victim->sortMiners("mp");
-    for (int i=0; i<3; i++) {
-        if (minerIsCorrupt(list.end().victim->getMiner(i))) {
-            list.end().bribedMiner = list.end().victim->getMiner(i);
+    BW->list.end().victim->sortMiners("mp");
+    int r = gen->select_random_index(1, 10);
+    if (r > BW->list.end().victim->size()-1)
+        r = BW->list.end().victim->size()-1;
+    for (int i=0; i<r; i++) {
+        if (!BW->list.end().victim->getMiner(i)->BW_assigned && minerIsCorrupt(BW->list.end().victim->getMiner(i))) {
+            BW->list.end().bribedMiner = BW->list.end().victim->getMiner(i);
+            BW->list.end().bribedMiner->BW_assigned = true;
             return true;
         }
     }
-    list.pop_back();
+    BW->list.pop_back();
     return false;
-}
-
-bool BW_Attack::selectMinerFromSuspectPool() {
-    list.end().winnerMiner = list.end().suspect->getMiner(0);
-    return true;
 }
 
 bool BW_Attack::minerIsCorrupt(Miner* miner) {
@@ -284,19 +335,18 @@ bool BW_Attack::minerIsCorrupt(Miner* miner) {
 }
 
 int BW_Attack::getBribedMiner(Miner* miner) {
-    for (int i=0; i<list.size(); i++) {
-        if (miner==list[i].bribedMiner)
+    for (int i=0; i<BW->list.size(); i++) {
+        if (miner==BW->list[i].bribedMiner)
             return i;
     }
     return -1;
 }
 
 bool BW_Attack::initializeAttackEntities() {
-    if (!assignVictim_Suspect())
+    if (!assignVictim())
         return false;
     if (!selectMinerFromVictimPool())
         return false;
-    selectMinerFromSuspectPool();
     return true;
 }
 
@@ -311,21 +361,62 @@ Money BW_Attack::calculateBribe(Money reward, Miner* miner) {
     minerReward = reward * r;
     minerReward += powReward;
     Money bribe;
-    bribe = minerReward + (minerReward*0.1);
+    double p = gen->select_random_index(50, 110)/100.0;
+    bribe = minerReward + (minerReward*p);
     return bribe;
 }
 
-bool BW_Attack::processAttack(Miner* miner, Money reward) {
+bool BW_Attack::processAttack(Miner* & miner, Money reward) {
     int i = getBribedMiner(miner);
     if (i==-1)
         return false;
-    else {
-        Money bribe;
-        bribe = calculateBribe(reward, miner);
-        reward -= bribe;
-        list[i].bribedMiner->receivePowRewards(bribe);
-        list[i].suspect->receiveReward(reward, list.end().winnerMiner);
+    int poolSize = BW->list[i].suspect->size();
+    if (!poolSize) {
+        BW->list.pop(i);
+        return false;
     }
+    int r = gen->select_random_index(0, poolSize-1);
+    Money bribe;
+    bribe = calculateBribe(reward, miner);
+    BW->list[i].suspect->payBribe(miner, bribe);
+    miner->BW_assigned = false;
+    saveToCsvFile(i, reward, bribe);
+    miner = BW->list[i].suspect->getMiner(r);
+    BW->list.pop(i);
     return true;
 }
 
+void BW_Attack::print() {
+    for (int i=0; i<BW->list.size(); i++) {
+        std::cout <<  i << "\n\tXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n" << std::endl;
+        BW->list[i].bribedMiner->print();
+        BW->list[i].victim->print();
+        BW->list[i].suspect->print();
+    }
+}
+
+void BW_Attack::CsvFileInit() {
+    if (!file_exist("Output/blockwithholding_event.csv")) {
+        std::ofstream out;
+        out.open("Output/blockwithholding_event.csv");
+        out << "mining_round" << "," << "suspect_pool" << "," << "victim_pool" << "," << "bribed_miner" << "," << "reward_amount" << "," << "bribe_paid" << std::endl;
+        out.close();
+    }
+}
+
+void BW_Attack::saveToCsvFile(int index, Money reward, Money bribe) {
+    CsvFileInit();
+    std::string filename = "Output/blockwithholding_event.csv";
+    std::fstream uidlFile(filename, std::fstream::in | std::fstream::out | std::fstream::app);
+     if (uidlFile.is_open()) {
+         uidlFile << variableP->current.totalMinedBlocks+1 << ",";
+         uidlFile << BW->list[index].suspect->poolName() << ",";
+         uidlFile << BW->list[index].victim->poolName() << ",";
+         uidlFile << BW->list[index].bribedMiner->idValue << ",";
+         uidlFile << reward.convert() << ",";
+         uidlFile << bribe.convert() << std::endl;
+         uidlFile.close();
+     }
+     else
+       std::cout << "Cannot save to 'blockwithholding_event.csv' file" << std::endl;
+}

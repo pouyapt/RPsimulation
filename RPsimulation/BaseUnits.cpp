@@ -697,27 +697,27 @@ void Stats::updateNumberOfPoolMiners(int i) {
 }
 
 void Stats::printCurrentStats() {
-    std::cout << "\n================ Statistics ===============\n";
-    std::cout << "Current Unit Value:        " << current.unitPrice << std::endl;
-    std::cout << "Unit Per New Block:        " << getUnitPerNewBlock() << std::endl;
-    std::cout << "Total Network Hash Power:  " << current.totalHashPower << " TH/s" << std::endl;
-    std::cout << "Present Miners:            " << current.minersPopulation << std::endl;
-    std::cout << "Past Miners:               " << current.inactiveMinersPopulation << std::endl;
-    std::cout << "Number of Pools:           " << current.poolsPopulation << std::endl;
-    std::cout << "Solo / Pool Miners:        " << double(current.minersPopulation - current.numberOfPoolMiners)/double(current.minersPopulation)*100 << "% / " << double(current.numberOfPoolMiners)/double(current.minersPopulation)*100 << "%" << std::endl;
-
-    std::cout << "Last Generated Block:      " << convertToDate_Time(current.lastGeneratedBlockTime);
-    std::cout << "Highest Miner Reputation:  " << current.highestMinerReputation << std::endl;
-    std::cout << "Lowest Miner Reputation:   " << current.lowestMinerReputation << std::endl;
-    std::cout << "Total Mined Blocks:        " << current.totalMinedBlocks << std::endl;
-    std::cout << "Total Value of All Blocks: " << current.totalRevenue << std::endl;
-    std::cout << "Total Mining Power Costs:  " << current.totalCost << std::endl;
-    std::cout << "===========================================\n";
+    std::cout << "\n================== Statistics =================\n";
+    std::cout << "Current Unit Value:          " << current.unitPrice << std::endl;
+    std::cout << "Unit Per New Block:          " << getUnitPerNewBlock() << std::endl;
+    std::cout << "Total Network Hash Power:    " << current.totalHashPower << " TH/s" << std::endl;
+    std::cout << "Present Miners:              " << current.minersPopulation << std::endl;
+    std::cout << "Past Miners:                 " << current.inactiveMinersPopulation << std::endl;
+    std::cout << "Number of Pools:             " << current.poolsPopulation << std::endl;
+    std::cout << "Solo / Pool Miners:          " << double(current.minersPopulation - current.numberOfPoolMiners)/double(current.minersPopulation)*100 << "% / " << double(current.numberOfPoolMiners)/double(current.minersPopulation)*100 << "%" << std::endl;
+    std::cout << "Last Generated Block:        " << convertToDate_Time(current.lastGeneratedBlockTime);
+    std::cout << "Highest Miner Reputation:    " << current.highestMinerReputation << std::endl;
+    std::cout << "Lowest Miner Reputation:     " << current.lowestMinerReputation << std::endl;
+    std::cout << "Total Mined Blocks:          " << current.totalMinedBlocks << std::endl;
+    std::cout << "Total Mining Power Costs:    " << current.totalCost << std::endl;
+    std::cout << "Total Distributed Rewards:   " << current.totalRevenue << std::endl;
+    std::cout << "Current Value of All Blocks: " << current.unitPrice * getUnitPerNewBlock() * current.totalMinedBlocks << std::endl;
+    std::cout << "Number of Violations:        " << current.dishonestActivitiesCount << std::endl;
+    std::cout << "===============================================\n";
 }
 
 void Stats::addNewStatsToCsvFile() {
     statFileInit();
-    std::string filename = "stats.csv";
     std::fstream uidlFile(filename, std::fstream::in | std::fstream::out | std::fstream::app);
      if (uidlFile.is_open()) {
          for (auto i=0; i<snapShots.size(); i++) {
@@ -731,12 +731,13 @@ void Stats::addNewStatsToCsvFile() {
              uidlFile << snapShots[i].totalRevenue.convert() << ",";
              uidlFile << snapShots[i].totalCost.convert() << ",";
              uidlFile << snapShots[i].highestMinerReputation << ",";
-             uidlFile << snapShots[i].lowestMinerReputation << std::endl;
+             uidlFile << snapShots[i].lowestMinerReputation << ",";
+             uidlFile << snapShots[i].dishonestActivitiesCount << std::endl;
          }
          uidlFile.close();
      }
      else {
-       std::cout << "Cannot save to 'stats.csv' file" << std::endl;
+       std::cout << "Cannot save to 'stat_snapshots.csv' file" << std::endl;
      }
 }
 
@@ -745,9 +746,9 @@ void Stats::saveSnapShot() {
 }
 
 void Stats::statFileInit() {
-    if (!file_exist("stats.csv")) {
+    if (!file_exist("Output/stat_snapshots.csv")) {
         std::ofstream out;
-        out.open("stats.csv");
-        out << "unix_time" << "," << "unit_price" << "," << "units_per_block" << "," << "total_hash_power" << "," << "miners" << "," << "pools" << "," << "pool_miners" << "," << "revenue" << "," << "cost" << "," << "highest_reputation" << "," << "lowest_reputation" << std::endl;
+        out.open("Output/stat_snapshots.csv");
+        out << "unix_time" << "," << "unit_price" << "," << "units_per_block" << "," << "total_hash_power" << "," << "miners" << "," << "pools" << "," << "pool_miners" << "," << "revenue" << "," << "cost" << "," << "highest_reputation" << "," << "lowest_reputation" << "," << "dishonest_activities" << std::endl;
     }
 }

@@ -108,7 +108,7 @@ double EntityParameters::poolCostForOneMinerPerHour(std::string parameter) {
 //----------------------------------------------------------------------------------
 
 PopulationParameters::PopulationParameters() {
-    databaseInit();
+    folder();
     if (!readFiles()) {
         populationFunctionSteepness = calculateSteepness();
         maxPopulationGrowth = sigmoidDeravative(halfMaximumMinersTime, maximumMiners, populationFunctionSteepness, halfMaximumMinersTime);
@@ -154,7 +154,7 @@ void PopulationParameters::writeFiles() {
 //----------------------------------------------------------------------------------
 
 MiningParameters::MiningParameters() {
-    databaseInit();
+    folder();
     if (!readFiles()) {
         revenueFunctionSteepness = calculateSteepness();
     }

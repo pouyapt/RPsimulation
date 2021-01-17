@@ -97,16 +97,20 @@ private:
     long idValue;
     std::time_t joinTimestamp;
     std::time_t quitTimestamp;
+    int joinedRound;
+    int leftRound;
     double reputation;
     double reputationTimeOffset; // If violation is detected a negative time offset is added which will reduce the reputation.
     int hashPower;
     int detectedViolations;
     int allViolations;
     long violationTimeOffset;
+    double earnedCryptoUnits;
     Money powerCostPerHour;
     Money costs;
     Money poolIncome;
     Money powIncome;
+    Money dishonestIncome;
     Money investment;
     Money targetProfit;
     int roundsPlayed;
@@ -118,10 +122,10 @@ private:
     long shuffleValue;
     long index;
     long oldIndex;
+    bool BW_assigned;
     Money powerConRate;
     Money lossTolerance;
     bool soloMinigNotProfitable = true;
-    bool corrupted = false;
     struct machine m;
     double probabilityConfidence;
     int receivedInvitationsCount;
@@ -173,6 +177,7 @@ public:
     bool extracted();
     void receivePoolRewards(Money amount);
     void receivePowRewards(Money amount);
+    void receiveBribe(Money amount);
     void addCost(Money amount);
     void receiveInvitation(PoolManager* p);
     bool isBellowLossTolerance();
@@ -257,6 +262,7 @@ private:
     long idValue;
     Money income;
     Money cost;
+    Money bribe;
     Money costPerMiner;
     Money lossTolerance;
     int mined;
@@ -306,6 +312,7 @@ public:
     bool pickMiner(Miner* miner);
     bool releaseMiner(Miner* miner);
     void receiveCandidateMiner(Miner* miner);
+    void payBribe(Miner* miner, Money minerBribe);
     Money estimateDailyRevenueForMiners(int hash=0);
     Money estimateDailyPowRewardForMiners(int hash);
     void receiveAcceptedInvitation(Miner* miner);

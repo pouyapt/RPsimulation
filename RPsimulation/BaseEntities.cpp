@@ -190,9 +190,9 @@ double MasterTime::getModulatorValue(std::string key) {
 }
 
 void MasterTime::CsvFileInit() {
-    if (!file_exist("modulatorValues.csv")) {
+    if (!file_exist("Output/modulatorValues.csv")) {
         std::ofstream out;
-        out.open("modulatorValues.csv");
+        out.open("Output/modulatorValues.csv");
         out << "unix_time" << ",";
         for (auto i=0; i<ModulatorNames.size(); i++) {
             out << ModulatorNames[i];
@@ -206,7 +206,7 @@ void MasterTime::CsvFileInit() {
 
 void MasterTime::addModValuesToCsvFile() {
     CsvFileInit();
-    std::string filename = "modulatorValues.csv";
+    std::string filename = "Output/modulatorValues.csv";
     std::fstream uidlFile(filename, std::fstream::in | std::fstream::out | std::fstream::app);
      if (uidlFile.is_open()) {
          uidlFile << getCurrentTime() << ",";
@@ -300,6 +300,8 @@ void Miner::removePoolManager(PoolManager* poolManager) {
 void Miner::initialize() {
     idValue = 0;
     joinTimestamp = 0;
+    joinedRound = 0;
+    leftRound = -1;
     reputation = 0;
     detectedViolations = 0;
     allViolations = 0;
@@ -307,6 +309,7 @@ void Miner::initialize() {
     costs = 0;
     poolIncome = 0;
     powIncome = 0;
+    dishonestIncome = 0;
     hashPower = 0;
     dishonestyFactor = 0;
     roundsPlayed = 0;
@@ -315,6 +318,7 @@ void Miner::initialize() {
     powerConRate = 0;
     receivedInvitationsCount = 0;
     reputationTimeOffset = 0;
+    BW_assigned = false;
     newMiner = true;
     taken = false;
     pool = NULL;
@@ -357,6 +361,12 @@ void Miner::receivePoolRewards(Money amount) {
 
 void Miner::receivePowRewards(Money amount) {
     powIncome += amount;
+    mined++;
+}
+
+void Miner::receiveBribe(Money amount) {
+    dishonestIncome += amount;
+    allViolations++;
 }
 
 void Miner::addCost(Money amount) {
@@ -391,15 +401,16 @@ void Miner::print() {
     std::cout << "No Solo Profit:   " << soloMinigNotProfitable << std::endl;
     std::cout << "Income - Pool:    " << poolIncome << std::endl;
     std::cout << "Income - Solo:    " << powIncome << std::endl;
+    std::cout << "Income - Cheat:   " << dishonestIncome << std::endl;
     std::cout << "Costs:            " << costs << std::endl;
-    std::cout << "Net Profit:       " << poolIncome + powIncome + costs << std::endl;
+    std::cout << "Net Profit:       " << poolIncome + powIncome + dishonestIncome + costs << std::endl;
     std::cout << "Mining Time:      " << minedTime << std::endl;
     std::cout << "Blocks Mined:     " << mined << std::endl;
     std::cout << "Loss Tolerance:   " << lossTolerance << std::endl;
     std::cout << "Target Profit:    " << targetProfit << std::endl;
     std::cout << "Invited to Pools: " << receivedInvitationsCount << std::endl;
     //std::cout << "D Violation       " << detectedViolations << std::endl;
-    //std::cout << "A Violation:      " << allViolations << std::endl;
+    std::cout << "A Violation:      " << allViolations << std::endl;
     //std::cout << "Machine Name:     " << m.name << std::endl;
     //std::cout << "Machine Hash:     " << m.hashRate << std::endl;
     //std::cout << "Machine Wattage:  " << m.wattage << std::endl;
@@ -464,6 +475,8 @@ Money Miner::estimatePoolProfit(PoolManager* PM, bool newPool) {
 }
 
 void Miner::processInvitation() {
+    if (BW_assigned==true)
+        return;
     if (invitations.empty())
         return;
     if (poolCommitmentTimeIsOver()==false)
@@ -819,6 +832,11 @@ void PoolManager::receiveReward(Money amount, Miner* miner) {
     MiningPool::distributeMinersReward(amount, miner);
 }
 
+void PoolManager::payBribe(Miner* miner, Money minerBribe) {
+    miner->receiveBribe(minerBribe);
+    bribe -= minerBribe;
+}
+
 bool PoolManager::pickMiner(Miner* miner) {
     if (miner->isInPool()) {
         std::cout << "pickMiner: Miner is already in a pool.\n";
@@ -894,6 +912,7 @@ void PoolManager::print() {
     std::cout << "Hash Share:           " << getHashShare() << "%\n";
     std::cout << "Income:               " << income << std::endl;
     std::cout << "Costs:                " << cost << std::endl;
+    std::cout << "Bribe:                " << bribe << std::endl;
     std::cout << "Mined Blocks Count:   " << mined << std::endl;
     std::cout << "Loss Tolerance:       " << lossTolerance << std::endl;
     std::cout << "------------------------------------------\n";

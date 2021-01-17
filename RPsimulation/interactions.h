@@ -3,18 +3,6 @@
 
 #include "structures.h"
 
-struct AttackGroup {
-    AttackGroup() {
-        victim = nullptr;
-        suspect = nullptr;
-        bribedMiner = nullptr;
-        winnerMiner = nullptr;
-    }
-    PoolManager* victim;
-    PoolManager* suspect;
-    Miner* bribedMiner;
-    Miner* winnerMiner;
-};
 
 class PoolJoin {
 public:
@@ -45,19 +33,31 @@ private:
 
 class BW_Attack {
 private:
-    core::list<AttackGroup> list;
+    BW_Attack();
+    ~BW_Attack();
+    BW_Attack_Data* BW = &BW_Attack_Data::instance();
     core::Random* gen = &core::Random::instance();
     MinerPopulation* MP = &MinerPopulation::instance();
     Pools* P = &Pools::instance();
-    bool assignVictim_Suspect();
+    Stats* variableP = &Stats::instance();
+    std::string filename = "Data/BW_Attack.db";
+    bool assignVictim();
     bool selectMinerFromVictimPool();
-    bool selectMinerFromSuspectPool();
     bool minerIsCorrupt(Miner* miner);
     int getBribedMiner(Miner* miner);
     Money calculateBribe(Money reward, Miner* miner);
+    void read();
+    void write();
+    void CsvFileInit();
+    void saveToCsvFile(int index, Money reward, Money bribe);
 public:
+    static BW_Attack& instance() {
+        static BW_Attack instance;
+        return instance;
+    }
     bool initializeAttackEntities();
-    bool processAttack(Miner* miner, Money reward);
+    bool processAttack(Miner* & miner, Money reward);
+    void print();
 };
 
 //---------------------------------------------------------------------------------
@@ -73,6 +73,7 @@ private:
     PopulationParameters* populationP = &PopulationParameters::instance();
     MasterTime* T = &MasterTime::instance();
     core::Random* gen = &core::Random::instance();
+    BW_Attack* BW = &BW_Attack::instance();
     void updateCosts();
     int priceModulatorIndex = 0;
     Miner* winerMiner();
@@ -87,6 +88,7 @@ private:
     Time lastRoundDuration;
     Time lastGeneratedBlockTimestamp;
     Money lastRoundPowerCost;
+    int dishonestActivitiesCount = 0;
     bool ReadGameFile();
     void WriteGameFile();
     void updateVariableParameters();

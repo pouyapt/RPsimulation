@@ -3,29 +3,50 @@
 
 #include "BaseEntities.h"
 
+struct AttackGroup {
+    AttackGroup() {
+        victim = nullptr;
+        suspect = nullptr;
+        bribedMiner = nullptr;
+    }
+    PoolManager* victim;
+    PoolManager* suspect;
+    Miner* bribedMiner;
+};
+
+class BW_Attack_Data {
+private:
+    core::list<AttackGroup> list;
+public:
+    static BW_Attack_Data& instance() {
+        static BW_Attack_Data instance;
+        return instance;
+    }
+    friend class MinerPopulation;
+    friend class Pools;
+    friend class BW_Attack;
+};
 
 class MinerPopulation {
 private:
     MinerPopulation();
     ~MinerPopulation();
     long totalHashPower_ = 0;
-    int allViolationsCount = 0;
-    int detectedViolationsCount = 0;
     double highestMinerReutation = 0;
     double lowestMinerReutation = 0;
-    long removedMinersCount = 0;
+    long removdMinersCount = 0;
     int removeLostMinersCountdown = 0;
     double population = 0;
     bool populationStage = 0;
     char populationDataFile[30] = "Data/p_data.db";
     char minersDataFile[30] = "Data/p_list.db";
-    char removedMinersDataFile[30] = "Data/p_list_removed.db";
+    char activeMinersCsvFile[30] = "Output/active_miners.csv";
+    char inactiveMinersCsvFile[30] = "Output/inactive_miners.csv";
     void writeMinersData(std::ofstream &out);
     void readMinersData(std::ifstream &in, int size);
     void writePopulationData();
     void resetGlobalParameters();
     bool readPopulationData();
-    void writeRemovedMiners();
     void addMiner(long time=0);
     void deleteMiner(unsigned index);
     void removeMinerFromPool(Miner* miner);
@@ -38,6 +59,7 @@ private:
     core::Random* gen = &core::Random::instance();
     Stats* variableP = &Stats::instance();
     MasterTime* T = &MasterTime::instance();
+    BW_Attack_Data* BW = &BW_Attack_Data::instance();
     int calculateInitialPopulation();
     void calculateNumberOfNewMiners(long time);
     void processMinersAddition(long time);
@@ -51,7 +73,10 @@ private:
     double minerPresenceDurationInYear(Miner* miner);
     void updateHighestLowestReputation(Miner* miner);
     core::list<Miner*> allMinersList;
-    core::list<Miner*> removedList;
+    void writeRemovedMinerToCsvFile(Miner *miner);
+    void writeActiveMinersToCsvFile();
+    void writeCsvHeaders(std::fstream & out);
+    void writeMinerToCsvFile(std::fstream & out, Miner* miner);
 public:
     static MinerPopulation& instance() {
         static MinerPopulation instance;
@@ -91,6 +116,7 @@ private:
     core::Random* gen = &core::Random::instance();
     Stats* variableP = &Stats::instance();
     PoolManager* getPool (unsigned index);
+    BW_Attack_Data* BW = &BW_Attack_Data::instance();
     void makePools(int number);
     std::string poolFile = "Data/pools.db";
     bool readPools ();

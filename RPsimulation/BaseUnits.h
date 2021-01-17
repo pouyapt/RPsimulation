@@ -157,9 +157,11 @@ public:
         return instance;
     }
     Stats operator=(const Stats & orig) = delete;
+    std::string filename = "Output/stat_snapshots.csv";
     friend class MinerPopulation;
     friend class Pools;
     friend class Game;
+    friend class BW_Attack;
     VirtualTime* T = &VirtualTime::instance();
     void printCurrentStats();
     void saveSnapShot();
@@ -187,7 +189,7 @@ private:
         int MinersWithAtLeastOneBlock = 0;
         double highestMinerReputation = 0;
         double lowestMinerReputation = 0;
-        int numberOfAllViolations = 0;
+        int dishonestActivitiesCount = 0;
         int numberOfDetectedViolations = 0;
         Money totalRevenue = 0;
         Money totalCost = 0;
