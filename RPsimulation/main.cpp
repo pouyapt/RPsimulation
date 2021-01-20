@@ -22,11 +22,11 @@ int main() {
 //        G->mine();
 //    }
 
-
+    P->print();
     S->printCurrentStats();
 //    MP->sort("rp");
 //    MP->printActiveMiners();
-//    P->print();
+    
 
 }
     

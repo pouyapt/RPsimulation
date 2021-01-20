@@ -119,9 +119,13 @@ private:
     BW_Attack_Data* BW = &BW_Attack_Data::instance();
     void makePools(int number);
     std::string poolFile = "Data/pools.db";
+    char activePoolsCsvFile[30] = "Output/active_pools.csv";
     bool readPools ();
     void writePools ();
     void updateVariableP();
+    void saveActivePoolsToCsv();
+    void writeCsvHeaders(std::fstream & out);
+    void writePoolToCsvFile(std::fstream & out, PoolManager* p);
 public:
     static Pools& instance(int population=INT_MIN) {
         static Pools instance(population);

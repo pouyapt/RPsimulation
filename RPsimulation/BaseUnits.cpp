@@ -710,7 +710,6 @@ void Stats::printCurrentStats() {
     std::cout << "Lowest Miner Reputation:     " << current.lowestMinerReputation << std::endl;
     std::cout << "Total Mined Blocks:          " << current.totalMinedBlocks << std::endl;
     std::cout << "Total Mining Power Costs:    " << current.totalCost << std::endl;
-    std::cout << "Total Distributed Rewards:   " << current.totalRevenue << std::endl;
     std::cout << "Current Value of All Blocks: " << current.unitPrice * getUnitPerNewBlock() * current.totalMinedBlocks << std::endl;
     std::cout << "Number of Violations:        " << current.dishonestActivitiesCount << std::endl;
     std::cout << "===============================================\n";

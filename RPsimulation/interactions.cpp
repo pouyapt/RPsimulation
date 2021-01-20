@@ -76,7 +76,6 @@ void PoolJoin::run() {
 
 Game::Game() {
     if (!ReadGameFile()) {
-        totalNetworkRevenue = 0;
         totalNetworkCosts = 0;
         T->createNewModulator(miningP->priceFluctuationRange, miningP->priceFluctuationMinPhase, miningP->priceFluctuationMaxPhase, "priceModulator");
         T->createNewModulator(miningP->revenueZeroPointRange, miningP->revenueZeroPointMinPhase, miningP->revenueZeroPointMaxPhase, "revenueZeroPoint");
@@ -98,7 +97,6 @@ bool Game::ReadGameFile() {
         return false;
     }
     in >> totalNetworkCosts;
-    in >> totalNetworkRevenue;
     in >> totalMinedBlocks;
     in >> lastRoundDuration;
     in >> lastRoundPowerCost;
@@ -116,7 +114,6 @@ void Game::WriteGameFile() {
     std::ofstream out;
     out.open(file);
     out << totalNetworkCosts.convert() << std::endl;
-    out << totalNetworkRevenue.convert() << std::endl;
     out << totalMinedBlocks << std::endl;
     out << lastRoundDuration.convertToNumber() << std::endl;
     out << lastRoundPowerCost.convert() << std::endl;
@@ -132,7 +129,6 @@ void Game::WriteGameFile() {
 
 void Game::updateVariableParameters() {
     variableP->current.time = T->getCurrentTime();
-    variableP->current.totalRevenue = totalNetworkRevenue;
     variableP->current.totalCost = totalNetworkCosts;
     variableP->current.totalMinedBlocks = totalMinedBlocks;
     variableP->current.unitPrice = modulatedUnitPrice;
@@ -188,8 +184,7 @@ void Game::updateCosts() {
 }
 
 void Game::mine() {
-    Money reward;
-    reward = modulatedUnitPrice * unitsPerBlock;
+    double reward = unitsPerBlock;
     updateCosts();
     BW->initializeAttackEntities();
     Miner* winner = winerMiner();
@@ -198,9 +193,9 @@ void Game::mine() {
     else {
         if (BW->processAttack(winner, reward))
             dishonestActivitiesCount++;
-        winner->pool->receiveReward(reward, winner);
+        else
+            winner->pool->receiveReward(reward, winner);
     }
-    totalNetworkRevenue += reward;
     updateVariableParameters();
     updateUnitPrice();
     updateModulatedUnitPrice();
@@ -350,23 +345,20 @@ bool BW_Attack::initializeAttackEntities() {
     return true;
 }
 
-Money BW_Attack::calculateBribe(Money reward, Miner* miner) {
-    Money poolFee, powReward;
-    poolFee = reward * miner->pool->poolFee();
-    reward = reward - poolFee;
-    powReward = reward * miner->pool->poolPowReward();
-    reward = reward - powReward;
-    Money minerReward;
+double BW_Attack::calculateBribe(double reward, Miner* miner) {
+    double poolFee = reward * miner->pool->poolFee();
+    reward -= poolFee;
+    double powReward = reward * miner->pool->poolPowReward();
+    reward -= powReward;
     double r = double(miner->hashPower) / double(miner->pool->poolHashPower());
-    minerReward = reward * r;
+    double minerReward = reward * r;
     minerReward += powReward;
-    Money bribe;
     double p = gen->select_random_index(50, 110)/100.0;
-    bribe = minerReward + (minerReward*p);
+    double bribe = minerReward + (minerReward*p);
     return bribe;
 }
 
-bool BW_Attack::processAttack(Miner* & miner, Money reward) {
+bool BW_Attack::processAttack(Miner* miner, double reward) {
     int i = getBribedMiner(miner);
     if (i==-1)
         return false;
@@ -376,12 +368,11 @@ bool BW_Attack::processAttack(Miner* & miner, Money reward) {
         return false;
     }
     int r = gen->select_random_index(0, poolSize-1);
-    Money bribe;
-    bribe = calculateBribe(reward, miner);
+    double bribe = calculateBribe(reward, miner);
     BW->list[i].suspect->payBribe(miner, bribe);
     miner->BW_assigned = false;
     saveToCsvFile(i, reward, bribe);
-    miner = BW->list[i].suspect->getMiner(r);
+    BW->list[i].suspect->receiveDishonestReward(BW->list[i].suspect->getMiner(r), reward, bribe);
     BW->list.pop(i);
     return true;
 }
@@ -404,7 +395,7 @@ void BW_Attack::CsvFileInit() {
     }
 }
 
-void BW_Attack::saveToCsvFile(int index, Money reward, Money bribe) {
+void BW_Attack::saveToCsvFile(int index, double reward, double bribe) {
     CsvFileInit();
     std::string filename = "Output/blockwithholding_event.csv";
     std::fstream uidlFile(filename, std::fstream::in | std::fstream::out | std::fstream::app);
@@ -413,8 +404,8 @@ void BW_Attack::saveToCsvFile(int index, Money reward, Money bribe) {
          uidlFile << BW->list[index].suspect->poolName() << ",";
          uidlFile << BW->list[index].victim->poolName() << ",";
          uidlFile << BW->list[index].bribedMiner->idValue << ",";
-         uidlFile << reward.convert() << ",";
-         uidlFile << bribe.convert() << std::endl;
+         uidlFile << reward  << ",";
+         uidlFile << bribe << std::endl;
          uidlFile.close();
      }
      else

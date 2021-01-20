@@ -45,18 +45,18 @@ private:
     bool selectMinerFromVictimPool();
     bool minerIsCorrupt(Miner* miner);
     int getBribedMiner(Miner* miner);
-    Money calculateBribe(Money reward, Miner* miner);
+    double calculateBribe(double reward, Miner* miner);
     void read();
     void write();
     void CsvFileInit();
-    void saveToCsvFile(int index, Money reward, Money bribe);
+    void saveToCsvFile(int index, double reward, double bribe);
 public:
     static BW_Attack& instance() {
         static BW_Attack instance;
         return instance;
     }
     bool initializeAttackEntities();
-    bool processAttack(Miner* & miner, Money reward);
+    bool processAttack(Miner* miner, double reward);
     void print();
 };
 
@@ -77,7 +77,6 @@ private:
     void updateCosts();
     int priceModulatorIndex = 0;
     Miner* winerMiner();
-    Money totalNetworkRevenue;
     Money totalNetworkCosts;
     Money unitPrice;
     Money modulatedUnitPrice;

@@ -37,11 +37,11 @@ private:
     int poolMinumumMembershipTimeStd = 2;
     int poolMinumumMembershipTimeMin = 3;
     int poolMinumumMembershipTimeMax = 9;
-    int poolStartingInvestment = 10000;
-    double poolCostForOneMinerPerHourMean = 0.008;
-    double poolCostForOneMinerPerHourStd = 0.002;
-    double poolCostForOneMinerPerHourMin = 0.005;
-    double poolCostForOneMinerPerHourMax = 0.01;
+    int poolStartingInvestment = 100000;
+    double poolCostForOneMinerPerHourMean = 0.042;
+    double poolCostForOneMinerPerHourStd = 0.006;
+    double poolCostForOneMinerPerHourMin = 0.035;
+    double poolCostForOneMinerPerHourMax = 0.049;
 public:
     static EntityParameters& instance() {
         static EntityParameters instance;
