@@ -667,6 +667,60 @@ std::istream& operator>>(std::istream& is, Money&& dl) {
     return is;
 }
 
+//-------------------------------------------------------------------------------------
+
+double Trust::mu_x_B(double x) {
+    return (p->theta-p->eta)/(p->beta+1)*(x+1)+p->eta;
+}
+
+double Trust::mu_x_N(double x)  {
+    return p->theta;
+}
+
+double Trust::mu_x_G(double x)  {
+    return (p->kappa-p->theta)/(1-p->epsilon-p->alpha)*(x-p->alpha)+p->theta;
+}
+
+double Trust::mu_x_1(double x)  {
+    return (p->kappa/p->epsilon)*(1-x-p->epsilon)+p->kappa;
+}
+
+double Trust::mu_prime_x_1(double x)  {
+    return (p->kappa/p->epsilon)*(x+1);
+}
+
+double Trust::mu_prime_x_B(double x)  {
+    return (p->theta-p->kappa)/(p->beta-p->epsilon+1)*(x-p->epsilon+1)+p->kappa;
+}
+
+double Trust::mu_prime_x_N(double x)  {
+    return p->theta;
+}
+
+double Trust::mu_prime_x_G(double x)  {
+    return (p->eta-p->theta)/(1-p->alpha)*(x-p->alpha)+p->theta;
+}
+
+double Trust::cooperation(double x) {
+    if (x < p->beta)
+        return x+mu_x_B(x);
+    if (x >= p->beta && x <= p->alpha)
+        return x+mu_x_N(x);
+    if (x > p->alpha && x <= 1-p->epsilon)
+        return x+mu_x_G(x);
+    return x+mu_x_1(x);
+}
+
+double Trust::defection(double x) {
+    if (x > p->alpha)
+        return x-mu_prime_x_G(x);
+    if (x >= p->beta && x <= p->alpha)
+        return x-mu_x_N(x);;
+    if (x < p->beta && x >= p->epsilon-1)
+        return x-mu_prime_x_B(x);
+    return x-mu_prime_x_1(x);
+}
+
 //----------------------------------------------------------------------------------
 
 Stats::~Stats() {
@@ -696,23 +750,29 @@ void Stats::updateNumberOfPoolMiners(int i) {
     current.numberOfPoolMiners += i;
 }
 
+bool Stats::inReputationMode() {
+    return reputationMode;
+}
+
 void Stats::printCurrentStats() {
-    std::cout << "\n================== Statistics =================\n";
-    std::cout << "Current Unit Value:          " << current.unitPrice << std::endl;
-    std::cout << "Unit Per New Block:          " << getUnitPerNewBlock() << std::endl;
-    std::cout << "Total Network Hash Power:    " << current.totalHashPower << " TH/s" << std::endl;
-    std::cout << "Present Miners:              " << current.minersPopulation << std::endl;
-    std::cout << "Past Miners:                 " << current.inactiveMinersPopulation << std::endl;
-    std::cout << "Number of Pools:             " << current.poolsPopulation << std::endl;
-    std::cout << "Solo / Pool Miners:          " << double(current.minersPopulation - current.numberOfPoolMiners)/double(current.minersPopulation)*100 << "% / " << double(current.numberOfPoolMiners)/double(current.minersPopulation)*100 << "%" << std::endl;
-    std::cout << "Last Generated Block:        " << convertToDate_Time(current.lastGeneratedBlockTime);
-    std::cout << "Highest Miner Reputation:    " << current.highestMinerReputation << std::endl;
-    std::cout << "Lowest Miner Reputation:     " << current.lowestMinerReputation << std::endl;
-    std::cout << "Total Mined Blocks:          " << current.totalMinedBlocks << std::endl;
-    std::cout << "Total Mining Power Costs:    " << current.totalCost << std::endl;
-    std::cout << "Current Value of All Blocks: " << current.unitPrice * getUnitPerNewBlock() * current.totalMinedBlocks << std::endl;
-    std::cout << "Number of Violations:        " << current.dishonestActivitiesCount << std::endl;
-    std::cout << "===============================================\n";
+    std::cout << "\n=================== Statistics ==================\n";
+    std::cout << "Current Unit Value:                   " << current.unitPrice << std::endl;
+    std::cout << "Unit Per New Block:                   " << getUnitPerNewBlock() << std::endl;
+    std::cout << "Total Network Hash Power:             " << current.totalHashPower << " TH/s" << std::endl;
+    std::cout << "Present Miners:                       " << current.minersPopulation << std::endl;
+    std::cout << "Past Miners:                          " << current.inactiveMinersPopulation << std::endl;
+    std::cout << "Number of Pools:                      " << current.poolsPopulation << std::endl;
+    std::cout << "Solo / Pool Miners:                   " << double(current.minersPopulation - current.numberOfPoolMiners)/double(current.minersPopulation)*100 << "% / " << double(current.numberOfPoolMiners)/double(current.minersPopulation)*100 << "%" << std::endl;
+    std::cout << "Last Generated Block:                 " << convertToDate_Time(current.lastGeneratedBlockTime);
+    std::cout << "Highest Miner Reputation:             " << current.highestMinerReputation << std::endl;
+    std::cout << "Lowest Miner Reputation:              " << current.lowestMinerReputation << std::endl;
+    std::cout << "Total Mined Blocks:                   " << current.totalMinedBlocks << std::endl;
+    std::cout << "Total Mining Power Costs:             " << current.totalCost << std::endl;
+    std::cout << "Current Value of All Blocks:          " << current.unitPrice * getUnitPerNewBlock() * current.totalMinedBlocks << std::endl;
+    std::cout << "Dishonest Activities:                 " << current.dishonestActivityCount << std::endl;
+    std::cout << "Detected Dishonest Activities:        " << current.detectedDishonestActivityCount << std::endl;
+    std::cout << "False Detected Dishonest Activities:  " << current.falseDetectedDishonestActivityCount << std::endl;
+    std::cout << "=================================================\n";
 }
 
 void Stats::addNewStatsToCsvFile() {
@@ -720,18 +780,21 @@ void Stats::addNewStatsToCsvFile() {
     std::fstream uidlFile(filename, std::fstream::in | std::fstream::out | std::fstream::app);
      if (uidlFile.is_open()) {
          for (auto i=0; i<snapShots.size(); i++) {
-             uidlFile << snapShots[i].time << ",";
-             uidlFile << snapShots[i].unitPrice.convert() << ",";
-             uidlFile << snapShots[i].unitPerNewBlock << ",";
-             uidlFile << snapShots[i].totalHashPower << ",";
-             uidlFile << snapShots[i].minersPopulation << ",";
-             uidlFile << snapShots[i].poolsPopulation << ",";
-             uidlFile << snapShots[i].numberOfPoolMiners << ",";
-             uidlFile << snapShots[i].totalRevenue.convert() << ",";
-             uidlFile << snapShots[i].totalCost.convert() << ",";
-             uidlFile << snapShots[i].highestMinerReputation << ",";
-             uidlFile << snapShots[i].lowestMinerReputation << ",";
-             uidlFile << snapShots[i].dishonestActivitiesCount << std::endl;
+             uidlFile << snapShots[i].totalMinedBlocks << ","
+                      << snapShots[i].time << ","
+                      << snapShots[i].unitPrice.convert() << ","
+                      << snapShots[i].unitPerNewBlock << ","
+                      << snapShots[i].totalHashPower << ","
+                      << snapShots[i].minersPopulation << ","
+                      << snapShots[i].poolsPopulation << ","
+                      << snapShots[i].numberOfPoolMiners << ","
+                      << snapShots[i].unitPrice.convert()*snapShots[i].unitPerNewBlock*snapShots[i].totalMinedBlocks << ","
+                      << snapShots[i].totalCost.convert() << ","
+                      << snapShots[i].highestMinerReputation << ","
+                      << snapShots[i].lowestMinerReputation << ","
+                      << snapShots[i].dishonestActivityCount << ","
+                      << snapShots[i].detectedDishonestActivityCount << ","
+                      << snapShots[i].falseDetectedDishonestActivityCount << "\n";
          }
          uidlFile.close();
      }
@@ -748,6 +811,20 @@ void Stats::statFileInit() {
     if (!file_exist("Output/stat_snapshots.csv")) {
         std::ofstream out;
         out.open("Output/stat_snapshots.csv");
-        out << "unix_time" << "," << "unit_price" << "," << "units_per_block" << "," << "total_hash_power" << "," << "miners" << "," << "pools" << "," << "pool_miners" << "," << "revenue" << "," << "cost" << "," << "highest_reputation" << "," << "lowest_reputation" << "," << "dishonest_activities" << std::endl;
+        out << "round,"
+            << "unix_time,"
+            << "unit_price,"
+            << "units_per_new_block,"
+            << "total_hash_power,"
+            << "number_of_miners,"
+            << "number_of_pools,"
+            << "pool_miners,"
+            << "total_blocks_value_in_dollar,"
+            << "total_miner_power_cost,"
+            << "highest_miner_reputation,"
+            << "lowest_miner_reputation,"
+            << "dishonest_activities,"
+            << "detected_dishonest_activities,"
+            << "false_detected_dishonest_activities\n";
     }
 }

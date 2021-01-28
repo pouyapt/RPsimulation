@@ -25,8 +25,8 @@ private:
     double probabilityConfidenceStd = 0.15;
     double probabilityConfidenceMin = 0.58;
     double probabilityConfidenceMax = 0.95;
-    double lossToleranceFactorMin = 0.2;
-    double lossToleranceFactorMax = 0.4;
+    double lossToleranceFactorMin = 0.4;
+    double lossToleranceFactorMax = 0.8;
     double targetProfitFactorMin = 0.15;
     double targetProfitFactorMax = 0.6;
     double leavePoolBeforeLooseFactorMean = 0.8;
@@ -37,7 +37,7 @@ private:
     int poolMinumumMembershipTimeStd = 2;
     int poolMinumumMembershipTimeMin = 3;
     int poolMinumumMembershipTimeMax = 9;
-    int poolStartingInvestment = 100000;
+    int poolStartingInvestment = 500000;
     double poolCostForOneMinerPerHourMean = 0.042;
     double poolCostForOneMinerPerHourStd = 0.006;
     double poolCostForOneMinerPerHourMin = 0.035;
@@ -106,7 +106,7 @@ private:
     unsigned maximumMiners = 20000;                     //Maximum Population (numerator of Sigmoid function)
     long halfMaximumMinersTime = 32100000;              // The required duration to reach the half of maximum population
     double startingPopulationToMaximumRatio = 0.002;    // population at time 0 divided by the maximum Population
-    unsigned defaultNumberOfPool = 6;
+    unsigned defaultNumberOfPool = 8;
     double growthRandomnessRange = 1.5;
     long growthRandomnessRangeMinPhase = 1209600;
     long growthRandomnessRangeMaxPhase = 2419200;
@@ -133,7 +133,43 @@ public:
 //----------------------------------------------------------------------------------
 
 class BwAttackParameters {
-    
+public:
+    static BwAttackParameters& instance() {
+        static BwAttackParameters instance;
+        return instance;
+    }
+    friend class BW_Attack;
+    friend class PoolManager;
+private:
+    BwAttackParameters() {}
+    int minimumVictimHashShare = 5; // Minimum Victim Pool Hash Share in Percentile
+    int victimPoolAttempts = 10; // Number of attempts to find corrupt miner from the victim pool
+    int maxAttackCounts = 15; // Maximum number of attacks for each setup
+    double maxMinerHashShare = 0.2; // Maximum miner's hash share in the victim pool to be assignable for the attack
+    double minerBribeMin = 20; // Minimum miner's bribe in percentage of reward
+    double minerBribeMax = 35; // Maximum miner's bribe in percentage of reward
+    int attackDetectionConfidence = 98; // The percentage of confidence interval for attack detection by the pool manager
+    int attackDetectionCycle = 12000; // The number of rounds for detection cycle
+};
+
+//----------------------------------------------------------------------------------
+
+class TrustParameters {
+public:
+    static TrustParameters& instance() {
+        static TrustParameters instance;
+        return instance;
+    }
+private:
+    friend class Trust;
+    TrustParameters() {}
+    ~TrustParameters() {}
+    double alpha = 0.2;
+    double beta = -0.2;
+    double epsilon = 0.1;
+    double theta = 0.03;
+    double eta = 0.01;
+    double kappa = 0.04;
 };
 
 //----------------------------------------------------------------------------------

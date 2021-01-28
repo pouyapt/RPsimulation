@@ -3,6 +3,59 @@
 
 #include "listDS.h"
 
+class Trust {
+private:
+    TrustParameters* p = &TrustParameters::instance();
+    double mu_x_B(double x);
+    double mu_x_N(double x);
+    double mu_x_G(double x);
+    double mu_x_1(double x);
+    double mu_prime_x_B(double x);
+    double mu_prime_x_N(double x);
+    double mu_prime_x_G(double x);
+    double mu_prime_x_1(double x);
+public:
+    double cooperation(double x);
+    double defection(double x);
+};
+
+//----------------------------------------------------------------------------------
+
+struct AttackCase {
+    AttackCase() {
+        victim = nullptr;
+        suspect = nullptr;
+        bribedMiner = nullptr;
+        bribePercentage = 0;
+        rounds = 0;
+        remainingRounds = 0;
+    }
+    PoolManager* victim;
+    PoolManager* suspect;
+    Miner* bribedMiner;
+    double bribePercentage;
+    int rounds;
+    int remainingRounds;
+};
+
+//---------------------------------------------------------------------------------
+
+class BW_Attack_Data {
+private:
+    core::list<AttackCase> list;
+public:
+    static BW_Attack_Data& instance() {
+        static BW_Attack_Data instance;
+        return instance;
+    }
+    friend class MinerPopulation;
+    friend class Pools;
+    friend class BW_Attack;
+    friend class PoolManager;
+};
+
+//----------------------------------------------------------------------------------
+
 class Time {
 private:
     int second;
@@ -162,6 +215,7 @@ public:
     friend class Pools;
     friend class Game;
     friend class BW_Attack;
+    friend class Reputation;
     VirtualTime* T = &VirtualTime::instance();
     void printCurrentStats();
     void saveSnapShot();
@@ -172,9 +226,11 @@ public:
     Money getUnitPrice();
     double getUnitPerNewBlock();
     void updateNumberOfPoolMiners(int i);
+    bool inReputationMode();
 private:
     Stats() {}
     ~Stats();
+    bool reputationMode = false;
     void statFileInit();
     struct snapShot {
         long time = 0;
@@ -189,9 +245,9 @@ private:
         int MinersWithAtLeastOneBlock = 0;
         double highestMinerReputation = 0;
         double lowestMinerReputation = 0;
-        int dishonestActivitiesCount = 0;
-        int numberOfDetectedViolations = 0;
-        Money totalRevenue = 0;
+        int dishonestActivityCount = 0;
+        int detectedDishonestActivityCount = 0;
+        int falseDetectedDishonestActivityCount = 0;
         Money totalCost = 0;
         int totalMinedBlocks = 0;
         long lastGeneratedBlockTime = 0;

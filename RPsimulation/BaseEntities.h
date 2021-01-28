@@ -6,7 +6,7 @@
 
 struct providedMiners {
     Miner* miner;
-    double expectedDailyProfit=0;
+    double expectedDailyProfit = 0;
 };
 
 struct poolEvaluation {
@@ -18,6 +18,12 @@ struct machine {
     char name[20];
     double hashRate;
     int wattage;
+};
+
+struct miningCycle {
+    int rounds = 0;
+    int powCount = 0;
+    double expectedPowCount = 0;
 };
 
 //----------------------------------------------------------------------------------
@@ -97,13 +103,14 @@ private:
     long idValue;
     std::time_t joinTimestamp;
     std::time_t quitTimestamp;
+    bool rational;
     int joinedRound;
     int leftRound;
     double reputation;
+    double expectedPowCount;
     double reputationTimeOffset; // If violation is detected a negative time offset is added which will reduce the reputation.
     int hashPower;
-    int detectedViolations;
-    int allViolations;
+    int BWAttack;
     long violationTimeOffset;
     double incomePow;
     double incomePool;
@@ -117,7 +124,7 @@ private:
     int roundsPlayed;
     double dishonestyFactor;
     bool taken;
-    int mined;
+    int powCount;
     Time minedTime;
     long poolJoined;
     long shuffleValue;
@@ -128,6 +135,7 @@ private:
     struct machine m;
     double probabilityConfidence;
     int receivedInvitationsCount;
+    miningCycle currentPoolCycle;
     core::list<poolEvaluation> invitations;
     PoolManager* pool;
     VirtualTime* T = &VirtualTime::instance();
@@ -145,6 +153,7 @@ private:
 public:
     friend class MinerPopulation;
     friend class Game;
+    friend class Reputation;
     friend class BW_Attack;
     friend bool compareID(Miner* a, Miner* b);
     friend bool compareDfact(Miner* a, Miner* b);
@@ -153,8 +162,7 @@ public:
     friend bool compareMined(Miner* a, Miner* b);
     friend bool compareShuffleValue(Miner* a, Miner* b);
     friend bool compareOldIndex(Miner* a, Miner* b);
-    friend bool compareDViolation(Miner* a, Miner* b);
-    friend bool compareAViolation(Miner* a, Miner* b);
+    friend bool compareBWAttack(Miner* a, Miner* b);
     friend bool compareProfit(Miner* a, Miner* b);
     friend bool compareRep(Miner* a, Miner* b);
     friend bool compareInvitationCount(Miner* a, Miner* b);
@@ -173,7 +181,9 @@ public:
     bool isInPool();
     int getMined();
     long getIndex();
-    bool extracted();
+    void incrementPlayedRound();
+    miningCycle& getMiningCycle();
+    double getExpectedMinedBlocks();
     void receivePoolRewards(double amount);
     void receivePowRewards(double amount);
     void receiveBribe(double amount);
@@ -184,6 +194,8 @@ public:
     void savePoolManager(PoolManager* poolManager);
     void removePoolManager(PoolManager* poolManager);
     void processInvitation();
+    void selectTheMostProfitablePool(const std::vector<PoolManager*> & PM); // For normal (non-reputation) mode
+    bool BribeIsAccepted(double bribePercentage, int numberOfRounds);
     void print();
     void printInvitations();
 };
@@ -197,8 +209,7 @@ bool compareJoinDate(Miner* a, Miner* b);
 bool compareMined(Miner* a, Miner* b);
 bool compareShuffleValue(Miner* a, Miner* b);
 bool compareOldIndex(Miner* a, Miner* b);
-bool compareDViolation(Miner* a, Miner* b);
-bool compareAViolation(Miner* a, Miner* b);
+bool compareBWAttack(Miner* a, Miner* b);
 bool compareProfit(Miner* a, Miner* b);
 bool compareRep(Miner* a, Miner* b);
 bool compareInvitationCount(Miner* a, Miner* b);
@@ -213,8 +224,6 @@ bool compareJoinDate_p(providedMiners a, providedMiners b);
 bool compareMined_p(providedMiners a, providedMiners b);
 bool compareShuffleValue_p(providedMiners a, providedMiners b);
 bool compareOldIndex_p(providedMiners a, providedMiners b);
-bool compareDViolation_p(providedMiners a, providedMiners b);
-bool compareAViolation_p(providedMiners a, providedMiners b);
 bool compareProfit_p(providedMiners a, providedMiners b);
 bool compareRep_p(providedMiners a, providedMiners b);
 bool compareScore(providedMiners a, providedMiners b);
@@ -259,12 +268,17 @@ private:
     std::string lastName;
     long idValue;
     double poolIncome;
+    double poolDishonestIncome;
     Money cost;
     double bribePayed;
     Money costPerMiner;
     Money lossTolerance;
-    int mined;
+    int powCount;
+    int dishonestPowCount;
     bool openToNewMiner;
+    double expectedPowCount;
+    int detectionCycle;
+    bool dishonest;
     core::Random* gen = &core::Random::instance();
     long index;
     void initialize();
@@ -274,22 +288,27 @@ private:
     long minimumMembershipTime;
     void calculateCandidatesScore();
     double calculateProfitForNewMiner(Miner* miner);
+    void resetMinersRoundCycle(Miner* miner);
     bool isBellowLossTolerance();
     void releaseAllMiners();
+    bool BwAttackIsDetected();
     int sendInvitationsCount = 0;
     std::time_t establishedTime;
     core::list<providedMiners> candidateMinersList;
     MiningParameters* miningP = &MiningParameters::instance();
     EntityParameters* entityP = &EntityParameters::instance();
     Stats* variableP = &Stats::instance();
+    BW_Attack_Data* BW = &BW_Attack_Data::instance();
+    BwAttackParameters* BWP = &BwAttackParameters::instance();
 public:
     friend class Pools;
+    friend class Game;
     friend bool compareIndex(PoolManager* a, PoolManager* b);
     friend bool compareHash(PoolManager* a, PoolManager* b);
     PoolManager operator=(const PoolManager & orig) = delete;
     void print();
     unsigned size();
-    int getMined();
+    int getPowCount();
     long getMinimumMembershipTime();
     Money getProfit();
     std::string getFirstName();
@@ -300,13 +319,14 @@ public:
     unsigned int poolHashPower();
     double poolFee();
     double poolPowReward();
-    double getHashShare();
+    double getHashShareInPercentile();
+    bool isDishonest();
     bool isOpenToNewMiners();
     long getIndex();
     Miner* getMiner(unsigned index);
     void updateCost(Time miningTime);
     void receiveReward(double amount, Miner* miner);
-    void receiveDishonestReward(Miner* miner, double reward, double bribe);
+    void receiveDishonestReward(Miner* miner, double reward);
     bool pickMiner(Miner* miner);
     bool releaseMiner(Miner* miner);
     void receiveCandidateMiner(Miner* miner);
@@ -319,6 +339,7 @@ public:
     void printCandidateMiners();
     void clearMinersCandidateList();
     void sortMiners(std::string by="");
+    void detectBwMiners(core::list<Miner*> & mList);
 };
 
 //--------------------------------------------------------------------------------

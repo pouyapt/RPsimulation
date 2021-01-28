@@ -252,10 +252,6 @@ int Miner::getHashPower() {
     return hashPower;
 }
 
-int Miner::getDetectedViolations() {
-    return detectedViolations;
-}
-
 int Miner::roundPlayed() {
     return roundsPlayed;
 }
@@ -269,7 +265,11 @@ bool Miner::isInPool() {
 }
 
 int Miner::getMined() {
-    return mined;
+    return powCount;
+}
+void Miner::incrementPlayedRound() {
+    roundsPlayed++;
+    currentPoolCycle.rounds++;
 }
 
 Money Miner::getPowerCostPerHour() {
@@ -278,6 +278,14 @@ Money Miner::getPowerCostPerHour() {
 
 long Miner::getIndex() {
     return index;
+}
+
+miningCycle& Miner::getMiningCycle() {
+    return currentPoolCycle;
+}
+
+double Miner::getExpectedMinedBlocks() {
+    return expectedPowCount;
 }
 
 void Miner::savePoolManager(PoolManager* poolManager) {
@@ -303,8 +311,7 @@ void Miner::initialize() {
     joinedRound = 0;
     leftRound = -1;
     reputation = 0;
-    detectedViolations = 0;
-    allViolations = 0;
+    BWAttack = 0;
     violationTimeOffset = 0;
     costs = 0;
     incomePool = 0;
@@ -313,7 +320,8 @@ void Miner::initialize() {
     hashPower = 0;
     dishonestyFactor = 0;
     roundsPlayed = 0;
-    mined = 0;
+    expectedPowCount = 0;
+    powCount = 0;
     poolJoined = -1;
     powerConRate = 0;
     receivedInvitationsCount = 0;
@@ -339,6 +347,7 @@ void Miner::generateInitialValues() {
     lastName = gen->name();
     idValue = gen->id_number(1000000000000000, 2000000000000000);
     joinTimestamp = T->getCurrentTime();
+    rational = gen->select_random_index(0, 2)==1 ? false : true;
     hashPower = gen->minig_power();
     dishonestyFactor = gen->dishonestyFactor();
     powerConRate = gen->miningPowerConsumption();
@@ -361,12 +370,12 @@ void Miner::receivePoolRewards(double amount) {
 
 void Miner::receivePowRewards(double amount) {
     incomePow += amount;
-    mined++;
+    powCount++;
+    currentPoolCycle.powCount++;
 }
 
 void Miner::receiveBribe(double amount) {
     incomeDishonesty += amount;
-    allViolations++;
 }
 
 void Miner::addCost(Money amount) {
@@ -405,12 +414,12 @@ void Miner::print() {
     std::cout << "Costs:            " << costs << std::endl;
     std::cout << "Net Profit:       " << costs + (variableP->getUnitPrice()*(incomePool + incomePow + incomeDishonesty)) << std::endl;
     std::cout << "Mining Time:      " << minedTime << std::endl;
-    std::cout << "Blocks Mined:     " << mined << std::endl;
+    std::cout << "Blocks Mined:     " << powCount << std::endl;
     std::cout << "Loss Tolerance:   " << lossTolerance << std::endl;
     std::cout << "Target Profit:    " << targetProfit << std::endl;
     std::cout << "Invited to Pools: " << receivedInvitationsCount << std::endl;
     //std::cout << "D Violation       " << detectedViolations << std::endl;
-    std::cout << "A Violation:      " << allViolations << std::endl;
+    std::cout << "BW Attacks:       " << BWAttack << std::endl;
     //std::cout << "Machine Name:     " << m.name << std::endl;
     //std::cout << "Machine Hash:     " << m.hashRate << std::endl;
     //std::cout << "Machine Wattage:  " << m.wattage << std::endl;
@@ -506,12 +515,46 @@ void Miner::processInvitation() {
     }
 }
 
+void Miner::selectTheMostProfitablePool(const std::vector<PoolManager*> & PM) {
+    if (taken==true)
+        return;
+    Money maxProfit;
+    maxProfit = estimateSoloMiningProfit();
+    if (soloMinigNotProfitable)
+        maxProfit = INT_MIN;
+    if (maxProfit<=0 && !rational) {
+        int r = gen->select_random_index(0, int(PM.size()-1));
+        PM[r]->pickMiner(this);
+        //std::cout << firstName << " " << lastName << " randomly joined pool: " << PM[r]->poolName() << "\n";
+        return;
+    }
+    Money poolProfit;
+    int index = -1;
+    for (auto i=0; i<PM.size(); i++) {
+        poolProfit = estimatePoolProfit(PM[i]);
+        if (poolProfit > maxProfit) {
+            maxProfit = poolProfit;
+            index = i;
+        }
+    }
+    if (index!=-1) {
+        PM[index]->pickMiner(this);
+        //std::cout << firstName << " " << lastName << " wisely joined pool: " << PM[index]->poolName() << "\n";
+    }
+}
+
 bool Miner::isBellowLossTolerance () {
     return ( (costs+(variableP->getUnitPrice()*(incomePool+incomePow+incomeDishonesty))) < lossTolerance ? true : false );
 }
 
 bool Miner::isReachedTargetProfit() {
     return ( (costs+(variableP->getUnitPrice()*(incomePool+incomePow+incomeDishonesty))) >= targetProfit ? true : false );
+}
+
+bool Miner::BribeIsAccepted(double bribePercentage, int numberOfRounds) {
+    if (variableP->inReputationMode()==false)
+        return true;
+    return false;
 }
 
 //----------------------------------------------------------------------------------
@@ -533,7 +576,7 @@ bool compareJoinDate(Miner* a, Miner* b) {
 }
 
 bool compareMined(Miner* a, Miner* b) {
-    return (a->mined >= b->mined ? true : false);
+    return (a->powCount >= b->powCount ? true : false);
 }
 
 bool compareShuffleValue(Miner* a, Miner* b) {
@@ -544,12 +587,8 @@ bool compareOldIndex(Miner* a, Miner* b) {
     return (a->oldIndex <= b->oldIndex ? true : false);
 }
 
-bool compareDViolation(Miner* a, Miner* b) {
-    return (a->detectedViolations >= b->detectedViolations ? true : false);
-}
-
-bool compareAViolation(Miner* a, Miner* b) {
-    return (a->allViolations >= b->allViolations ? true : false);
+bool compareBWAttack(Miner* a, Miner* b) {
+    return (a->BWAttack >= b->BWAttack ? true : false);
 }
 
 bool compareProfit(Miner* a, Miner* b) {
@@ -594,14 +633,6 @@ bool compareOldIndex_p(providedMiners a, providedMiners b) {
     return compareOldIndex(a.miner, b.miner);
 }
 
-bool compareDViolation_p(providedMiners a, providedMiners b) {
-    return compareDViolation(a.miner, b.miner);
-}
-
-bool compareAViolation_p(providedMiners a, providedMiners b) {
-    return compareAViolation(a.miner, b.miner);
-}
-
 bool compareProfit_p(providedMiners a, providedMiners b) {
     return compareProfit(a.miner, b.miner);
 }
@@ -633,10 +664,8 @@ compareFunc selectCompareFunc(std::string by) {
         return &compareShuffleValue;
     else if (by=="pf")
         return &compareProfit;
-    else if (by=="dv")
-        return &compareDViolation;
-    else if (by=="av")
-        return &compareAViolation;
+    else if (by=="bw")
+        return &compareBWAttack;
     else if (by=="jd")
         return &compareJoinDate;
     else if (by=="undo")
@@ -688,7 +717,7 @@ std::string& MiningPool::poolName() {
 void MiningPool::distributeMinersReward(double amount, Miner* miner) {
     double minerReward = amount * powReward;
     amount -= minerReward;
-    miner->receivePoolRewards(minerReward);
+    miner->receivePowRewards(minerReward);
     for (int i=0; i<miners.size(); i++) {
         double minersShare = amount * (double(miners[i]->getHashPower())/double(totalHashPower));
         miners[i]->receivePoolRewards(minersShare);
@@ -734,7 +763,12 @@ PoolManager::PoolManager(std::string mode) {
 
 void PoolManager::initialize() {
     poolIncome = 0;
-    mined = 0;
+    poolDishonestIncome = 0;
+    powCount = 0;
+    expectedPowCount = 0;
+    dishonestPowCount = 0;
+    bribePayed = 0;
+    detectionCycle = BWP->attackDetectionCycle;
     openToNewMiner = true;
 }
 
@@ -742,6 +776,7 @@ void PoolManager::generate() {
     firstName = gen->name();
     lastName = gen->name();
     idValue = gen->id_number(1000000, 9999999);
+    dishonest = gen->select_random_index(0, 1);
     minimumMembershipTime = gen->poolMinumumMembershipTime();
     Money investment;
     investment = entityP->getPoolStartingInvestment();
@@ -797,8 +832,12 @@ double PoolManager::poolPowReward() {
     return MiningPool::powReward;
 }
 
-int PoolManager::getMined() {
-    return mined;
+int PoolManager::getPowCount() {
+    return powCount;
+}
+
+bool PoolManager::isDishonest() {
+    return dishonest;
 }
 
 Money PoolManager::getProfit() {
@@ -813,6 +852,41 @@ long PoolManager::getIndex() {
     return index;
 }
 
+bool PoolManager::BwAttackIsDetected() {
+    double lowerBound = confidenceIntervalLowerBound(expectedPowCount, BWP->attackDetectionCycle, BWP->attackDetectionConfidence);
+    double p = powCount / double(BWP->attackDetectionCycle);
+    if (p < lowerBound)
+        return true;
+    return false;
+}
+
+void PoolManager::detectBwMiners(core::list<Miner*> & mList) {
+    if (variableP->inReputationMode()==false)
+        return;
+    if (detectionCycle==0) {
+        if (BwAttackIsDetected()) {
+            std::cout << "Attack detected: " << name << std::endl;
+            for (auto i=0; i<MiningPool::miners.size(); i++) {
+                double lowerBound = confidenceIntervalLowerBound(MiningPool::miners[i]->getMiningCycle().expectedPowCount, MiningPool::miners[i]->getMiningCycle().rounds, BWP->attackDetectionConfidence);
+                double p = MiningPool::miners[i]->getMiningCycle().powCount / double(MiningPool::miners[i]->getMiningCycle().rounds);
+                if (p < lowerBound) {
+                    mList.push_back(MiningPool::miners[i]);
+                    releaseMiner(MiningPool::miners[i]);
+                }
+            }
+        }
+        detectionCycle = BWP->attackDetectionCycle;
+    }
+    else
+        detectionCycle--;
+}
+
+void PoolManager::resetMinersRoundCycle(Miner* miner) {
+    miner->getMiningCycle().rounds = 0;
+    miner->getMiningCycle().powCount = 0;
+    miner->getMiningCycle().expectedPowCount = 0;
+}
+
 void PoolManager::sortMiners(std::string by) {
     miners.sort(selectCompareFunc(by));
 }
@@ -821,14 +895,16 @@ void PoolManager::receiveReward(double amount, Miner* miner) {
     double newIncome = amount*MiningPool::poolFee;
     amount -= newIncome;
     poolIncome += newIncome;
-    mined++;
+    powCount++;
     MiningPool::distributeMinersReward(amount, miner);
 }
 
-void PoolManager::receiveDishonestReward(Miner *miner, double reward, double bribe) {
-    reward -= bribe;
-    poolIncome += bribe;
-    receiveReward(reward, miner);
+void PoolManager::receiveDishonestReward(Miner *miner, double reward) {
+    double newIncome = reward*MiningPool::poolFee;
+    reward -= newIncome;
+    poolDishonestIncome += newIncome;
+    dishonestPowCount++;
+    MiningPool::distributeMinersReward(reward, miner);
 }
 
 void PoolManager::payBribe(Miner* miner, double minerBribe) {
@@ -843,11 +919,16 @@ bool PoolManager::pickMiner(Miner* miner) {
     }
     MiningPool::addMiner(miner);
     miner->savePoolManager(this);
+    resetMinersRoundCycle(miner);
     variableP->updateNumberOfPoolMiners(1);
     return true;
 }
 
 bool PoolManager::releaseMiner(Miner* miner) {
+    for (int i=0; i<BW->list.size(); i++) {
+        if (BW->list[i].bribedMiner == miner)
+            BW->list.pop(i);
+    }
     if (MiningPool::removeMiner(miner)) {
         miner->removePoolManager(this);
         variableP->updateNumberOfPoolMiners(-1);
@@ -908,16 +989,16 @@ void PoolManager::print() {
     std::cout << "POW Award:            " << MiningPool::powReward*100 << "%\n";
     std::cout << "Miners Count:         " << size() << std::endl;
     std::cout << "Hash Power:           " << poolHashPower() << std::endl;
-    std::cout << "Hash Share:           " << getHashShare() << "%\n";
+    std::cout << "Hash Share:           " << getHashShareInPercentile() << "%\n";
     std::cout << "Income:               " << variableP->getUnitPrice()*poolIncome << std::endl;
     std::cout << "Costs:                " << cost << std::endl;
     std::cout << "Bribe:                " << variableP->getUnitPrice()*bribePayed << std::endl;
-    std::cout << "Mined Blocks Count:   " << mined << std::endl;
+    std::cout << "Mined Blocks Count:   " << powCount << std::endl;
     std::cout << "Loss Tolerance:       " << lossTolerance << std::endl;
     std::cout << "------------------------------------------\n";
 }
 
-double PoolManager::getHashShare() {
+double PoolManager::getHashShareInPercentile() {
     return double(poolHashPower()) / double(variableP->getCurrentTotalHashPower())*100;
 }
 

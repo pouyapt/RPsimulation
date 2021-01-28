@@ -60,7 +60,22 @@ void PoolJoin::clearCandidateMinersList() {
         (*P)[i]->clearMinersCandidateList();
 }
 
-void PoolJoin::run() {
+void PoolJoin::runNormalMode() {
+    for (auto i=0; i<MP->size(); i++) {
+        if (!(*MP)[i]->isInPool()) {
+            std::vector<PoolManager*> pList;
+            pList.clear();
+            P->shuffle();
+            unsigned int r = gen->select_random_index(0, P->size());
+            for (auto j=0; j<r; j++)
+                pList.push_back(P->getPool(j));
+            if (!pList.empty())
+                (*MP)[i]->selectTheMostProfitablePool(pList);
+        }
+    }
+}
+
+void PoolJoin::runReputationMode() {
     provideMiners();
     sendInvitations();
     if (countUntilProcessInvitations)
@@ -105,7 +120,9 @@ bool Game::ReadGameFile() {
     in >> modulatedUnitPrice;
     in >> unitsPerBlock;
     in >> priceModulatorIndex;
-    in >> dishonestActivitiesCount;
+    in >> dishonestActivityCount;
+    in >> detectedDishonestActivityCount;
+    in >> falseDetectedDishonestActivityCount;
     in.close();
     return true;
 }
@@ -122,7 +139,9 @@ void Game::WriteGameFile() {
     out << modulatedUnitPrice.convert() << std::endl;
     out << unitsPerBlock << std::endl;
     out << priceModulatorIndex << std::endl;
-    out << dishonestActivitiesCount << std::endl;
+    out << dishonestActivityCount << std::endl;
+    out << detectedDishonestActivityCount << std::endl;
+    out << falseDetectedDishonestActivityCount << std::endl;
     out.close();
     std::cout << "The game data has been saved." << std::endl;
 }
@@ -135,7 +154,9 @@ void Game::updateVariableParameters() {
     variableP->current.unitPerNewBlock = unitsPerBlock;
     variableP->current.costRewardRatio = currentCostRewardRatio;
     variableP->current.lastGeneratedBlockTime = lastGeneratedBlockTimestamp.convertToNumber();
-    variableP->current.dishonestActivitiesCount = dishonestActivitiesCount;
+    variableP->current.dishonestActivityCount = dishonestActivityCount;
+    variableP->current.detectedDishonestActivityCount = detectedDishonestActivityCount;
+    variableP->current.falseDetectedDishonestActivityCount = falseDetectedDishonestActivityCount;
 }
 
 Miner* Game::winerMiner() {
@@ -155,18 +176,21 @@ Miner* Game::winerMiner() {
     return winner;
 }
 
-void Game::updateCosts() {
+void Game::updateMiningEntitiesData() {
     lastRoundPowerCost = 0;
     Time time;
     time = gen->minig_time();
     lastGeneratedBlockTimestamp = time + T->getCurrentTime();
     MP->populationUpdate(time.convertToNumber(), *this);
-    P->removeLostPools();
+    //P->removeLostPools();
     lastRoundDuration = time;
     for (auto i=0; i<P->size(); i++) {
         (*P)[i]->updateCost(time);
+        updateExpectedMinedBlocks((*P)[i]);
+        processBwDetection((*P)[i]);
     }
     for (auto i=0; i<MP->size(); i++) {
+        updateExpectedMinedBlocks((*MP)[i]);
         Money powerCost;
         Time minedDuration;
         if ((*MP)[i]->joinTimestamp > T->getCurrentTime())
@@ -177,7 +201,7 @@ void Game::updateCosts() {
         totalNetworkCosts -= powerCost;
         lastRoundPowerCost += powerCost;
         (*MP)[i]->addCost(powerCost);
-        (*MP)[i]->roundsPlayed++;
+        (*MP)[i]->incrementPlayedRound();
         (*MP)[i]->minedTime += minedDuration;
     }
     T->addSecondsToCurrentTime(time.convertToNumber());
@@ -185,15 +209,13 @@ void Game::updateCosts() {
 
 void Game::mine() {
     double reward = unitsPerBlock;
-    updateCosts();
+    updateMiningEntitiesData();
     BW->initializeAttackEntities();
     Miner* winner = winerMiner();
     if (winner->isInPool()==false)
         winner->receivePowRewards(reward);
     else {
-        if (BW->processAttack(winner, reward))
-            dishonestActivitiesCount++;
-        else
+        if (!BW->processAttack(winner, reward, dishonestActivityCount))
             winner->pool->receiveReward(reward, winner);
     }
     updateVariableParameters();
@@ -228,6 +250,29 @@ double Game::costRewardRatio(long population) {
     return sigmoid(population, miningP->revenueRangeFactor, miningP->revenueFunctionSteepness, populationP->maximumMiners*modulatedRevenueZeroPoint, miningP->revenueRangeFactor*0.45);
 }
 
+void Game::updateExpectedMinedBlocks(Miner* miner) {
+    double px = miner->hashPower/double(variableP->getCurrentTotalHashPower());
+    miner->expectedPowCount += px;
+    miner->currentPoolCycle.expectedPowCount += px;
+}
+
+void Game::updateExpectedMinedBlocks(PoolManager* p) {
+    double px = p->totalHashPower/double(variableP->getCurrentTotalHashPower());
+    p->expectedPowCount += px;
+}
+
+void Game::processBwDetection(PoolManager* P) {
+    core::list<Miner*> mList;
+    P->detectBwMiners(mList);
+    for (auto i=0; i<mList.size(); i++) {
+        if (mList[i]->BWAttack!=0)
+            detectedDishonestActivityCount++;
+        else
+            falseDetectedDishonestActivityCount++;
+        R.applyNegativeReputation(mList[i]);
+    }
+}
+
 //-------------------------------------------------------------------------------------
 
 BW_Attack::BW_Attack() {
@@ -248,6 +293,9 @@ void BW_Attack::write() {
         out << BW->list[i].suspect->getIndex() << std::endl;
         out << BW->list[i].victim->getIndex() << std::endl;
         out << BW->list[i].bribedMiner->getIndex() << std::endl;
+        out << BW->list[i].bribePercentage << std::endl;
+        out << BW->list[i].rounds << std::endl;
+        out << BW->list[i].remainingRounds << std::endl;
     }
     out.close();
     std::cout << "The BW_Attack data has been saved." << std::endl;
@@ -260,7 +308,7 @@ void BW_Attack::read() {
         std::cout << "The BW_Attack data file did not open." << std::endl;
         return;
     }
-    AttackGroup temp;
+    AttackCase temp;
     int i;
     int size;
     in >> size;
@@ -271,6 +319,9 @@ void BW_Attack::read() {
         temp.victim = (*P)[i];
         in >> i;
         temp.bribedMiner = (*MP)[i];
+        in >> temp.bribePercentage;
+        in >> temp.rounds;
+        in >> temp.remainingRounds;
         BW->list.push_back(temp);
         size--;
     }
@@ -279,41 +330,38 @@ void BW_Attack::read() {
 bool BW_Attack::assignVictim() {
     if (P->size() <= 1)
         return false;
-    int r1,r2;
-    do {
-        r1 = gen->select_random_index(0, P->size()-1);
-        r2 = gen->select_random_index(0, P->size()-1);
+    P->shuffle();
+    AttackCase temp;
+    for (auto i=0; i<P->size(); i++) {
+        if ((*P)[i]->getHashShareInPercentile() > BWP->minimumVictimHashShare)
+            temp.victim = (*P)[i];
     }
-    while (r1==r2);
-    if ((*P)[r1]->size()==0 || (*P)[r2]->size()==0)
+    if (temp.victim==nullptr)
         return false;
-    if ((*P)[r1]->getHashShare() < 15 && (*P)[r2]->getHashShare() < 15)
+    for (auto i=0; i<P->size(); i++) {
+        if ((*P)[i]!=temp.victim && (*P)[i]->isDishonest())
+            temp.suspect = (*P)[i];
+    }
+    if (temp.suspect==nullptr)
         return false;
-    PoolManager* v;
-    PoolManager* s;
-    if ((*P)[r1]->getHashShare() > (*P)[r2]->getHashShare()) {
-        v = (*P)[r1];
-        s = (*P)[r2];
-    }
-    else {
-        v = (*P)[r2];
-        s = (*P)[r1];
-    }
-    AttackGroup temp;
-    temp.suspect = s;
-    temp.victim = v;
     BW->list.push_back(temp);
     return true;
 }
 
 bool BW_Attack::selectMinerFromVictimPool() {
     BW->list.end().victim->sortMiners("mp");
-    int r = gen->select_random_index(1, 10);
+    int r = gen->select_random_index(1, BWP->victimPoolAttempts);
     if (r > BW->list.end().victim->size()-1)
         r = BW->list.end().victim->size()-1;
     for (int i=0; i<r; i++) {
-        if (!BW->list.end().victim->getMiner(i)->BW_assigned && minerIsCorrupt(BW->list.end().victim->getMiner(i))) {
-            BW->list.end().bribedMiner = BW->list.end().victim->getMiner(i);
+        Miner* temp = BW->list.end().victim->getMiner(i);
+        double bribePercentage = 0;
+        int numberOfRounds = 0;
+        if (temp->BW_assigned==false && checkMinerHashShare(temp, BW->list.end().victim) && minerIsCorrupt(temp, bribePercentage, numberOfRounds)) {
+            BW->list.end().bribedMiner = temp;
+            BW->list.end().rounds = numberOfRounds;
+            BW->list.end().remainingRounds = numberOfRounds;
+            BW->list.end().bribePercentage = bribePercentage;
             BW->list.end().bribedMiner->BW_assigned = true;
             return true;
         }
@@ -322,11 +370,21 @@ bool BW_Attack::selectMinerFromVictimPool() {
     return false;
 }
 
-bool BW_Attack::minerIsCorrupt(Miner* miner) {
+bool BW_Attack::minerIsCorrupt(Miner* miner, double & bribePercentage, int & numberOfRounds) {
     double r = gen->select_random_index(0, 99) / 100.0;
-    if (r <= miner->dishonestyFactor)
-        return true;
-    return false;
+    if (r > miner->dishonestyFactor)
+        return false;
+    bribePercentage = calculateBribePercentage();
+    numberOfRounds = gen->select_random_index(1, BWP->maxAttackCounts);
+    if (miner->BribeIsAccepted(bribePercentage, numberOfRounds)==false)
+        return false;
+    return true;
+}
+
+bool BW_Attack::checkMinerHashShare(Miner* miner, PoolManager* p) {
+    if (miner->hashPower >= p->poolHashPower()*BWP->maxMinerHashShare)
+        return false;
+    return true;
 }
 
 int BW_Attack::getBribedMiner(Miner* miner) {
@@ -345,20 +403,11 @@ bool BW_Attack::initializeAttackEntities() {
     return true;
 }
 
-double BW_Attack::calculateBribe(double reward, Miner* miner) {
-    double poolFee = reward * miner->pool->poolFee();
-    reward -= poolFee;
-    double powReward = reward * miner->pool->poolPowReward();
-    reward -= powReward;
-    double r = double(miner->hashPower) / double(miner->pool->poolHashPower());
-    double minerReward = reward * r;
-    minerReward += powReward;
-    double p = gen->select_random_index(50, 110)/100.0;
-    double bribe = minerReward + (minerReward*p);
-    return bribe;
+double BW_Attack::calculateBribePercentage() {
+    return gen->select_random_index(BWP->minerBribeMin, BWP->minerBribeMax)/100.0;
 }
 
-bool BW_Attack::processAttack(Miner* miner, double reward) {
+bool BW_Attack::processAttack(Miner* miner, double reward, int & activity) {
     int i = getBribedMiner(miner);
     if (i==-1)
         return false;
@@ -368,12 +417,19 @@ bool BW_Attack::processAttack(Miner* miner, double reward) {
         return false;
     }
     int r = gen->select_random_index(0, poolSize-1);
-    double bribe = calculateBribe(reward, miner);
+    double bribe = BW->list[i].bribePercentage*reward;
     BW->list[i].suspect->payBribe(miner, bribe);
-    miner->BW_assigned = false;
+    if (BW->list[i].remainingRounds == BW->list[i].rounds) {
+        miner->BWAttack++;
+        activity++;
+    }
+    BW->list[i].remainingRounds--;
     saveToCsvFile(i, reward, bribe);
-    BW->list[i].suspect->receiveDishonestReward(BW->list[i].suspect->getMiner(r), reward, bribe);
-    BW->list.pop(i);
+    BW->list[i].suspect->receiveDishonestReward(BW->list[i].suspect->getMiner(r), reward-bribe);
+    if (BW->list[i].remainingRounds==0) {
+        miner->BW_assigned = false;
+        BW->list.pop(i);
+    }
     return true;
 }
 
@@ -411,3 +467,37 @@ void BW_Attack::saveToCsvFile(int index, double reward, double bribe) {
      else
        std::cout << "Cannot save to 'blockwithholding_event.csv' file" << std::endl;
 }
+
+//-------------------------------------------------------------------------------------
+
+
+void Reputation::updateReputation(Miner* miner) {
+    double minersMembershipDuration = minerPresenceDurationInYear(miner);
+    miner->reputation = sigmoid(minersMembershipDuration, 2, 1, miner->reputationTimeOffset, 1);
+    updateHighestLowestReputation(miner);
+}
+
+double Reputation::minerPresenceDurationInYear(Miner* miner) {
+    return (T->getCurrentTime() - miner->joinTimestamp) / 31536000.0;
+}
+
+void Reputation::applyNegativeReputation(Miner* miner) {
+    double minersTimeDuration = minerPresenceDurationInYear(miner);
+    miner->reputationTimeOffset += minersTimeDuration - log(minersTimeDuration);
+    updateReputation(miner);
+}
+
+void Reputation::updateHighestLowestReputation(Miner* miner) {
+    if (miner->reputation > MP->highestMinerReutation) {
+        MP->highestMinerReutation = miner->reputation;
+        variableP->current.highestMinerReputation = MP->highestMinerReutation;
+        return;
+    }
+    if (miner->reputation < MP->lowestMinerReutation) {
+        MP->lowestMinerReutation = miner->reputation;
+        variableP->current.lowestMinerReputation = MP->lowestMinerReutation;
+        return;
+    }
+}
+
+//-------------------------------------------------------------------------------------

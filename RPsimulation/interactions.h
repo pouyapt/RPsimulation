@@ -10,7 +10,8 @@ public:
         static PoolJoin instance;
         return instance;
     }
-    void run();
+    void runReputationMode();
+    void runNormalMode();
 private:
     int countUntilProcessInvitations;
     void generateCount();
@@ -35,6 +36,7 @@ class BW_Attack {
 private:
     BW_Attack();
     ~BW_Attack();
+    BwAttackParameters* BWP = &BwAttackParameters::instance();
     BW_Attack_Data* BW = &BW_Attack_Data::instance();
     core::Random* gen = &core::Random::instance();
     MinerPopulation* MP = &MinerPopulation::instance();
@@ -43,9 +45,10 @@ private:
     std::string filename = "Data/BW_Attack.db";
     bool assignVictim();
     bool selectMinerFromVictimPool();
-    bool minerIsCorrupt(Miner* miner);
+    bool minerIsCorrupt(Miner* miner, double & bribePercentage, int & numberOfRounds);
     int getBribedMiner(Miner* miner);
-    double calculateBribe(double reward, Miner* miner);
+    double calculateBribePercentage();
+    bool checkMinerHashShare(Miner* miner, PoolManager* p);
     void read();
     void write();
     void CsvFileInit();
@@ -56,8 +59,24 @@ public:
         return instance;
     }
     bool initializeAttackEntities();
-    bool processAttack(Miner* miner, double reward);
+    bool processAttack(Miner* miner, double reward, int & activity);
     void print();
+};
+
+//---------------------------------------------------------------------------------
+
+class Reputation {
+private:
+    MinerPopulation* MP = &MinerPopulation::instance();
+    MasterTime* T = &MasterTime::instance();
+    Stats* variableP = &Stats::instance();
+    double minerPresenceDurationInYear(Miner* miner);
+    void updateHighestLowestReputation(Miner* miner);
+public:
+    Reputation() {}
+    ~Reputation() {}
+    void applyNegativeReputation(Miner* miner);
+    void updateReputation(Miner* miner);
 };
 
 //---------------------------------------------------------------------------------
@@ -74,7 +93,8 @@ private:
     MasterTime* T = &MasterTime::instance();
     core::Random* gen = &core::Random::instance();
     BW_Attack* BW = &BW_Attack::instance();
-    void updateCosts();
+    Reputation R;
+    void updateMiningEntitiesData();
     int priceModulatorIndex = 0;
     Miner* winerMiner();
     Money totalNetworkCosts;
@@ -87,7 +107,9 @@ private:
     Time lastRoundDuration;
     Time lastGeneratedBlockTimestamp;
     Money lastRoundPowerCost;
-    int dishonestActivitiesCount = 0;
+    int dishonestActivityCount = 0;
+    int detectedDishonestActivityCount = 0;
+    int falseDetectedDishonestActivityCount = 0;
     bool ReadGameFile();
     void WriteGameFile();
     void updateVariableParameters();
@@ -95,6 +117,9 @@ private:
     void updateModulatedUnitPrice();
     void generateInitialUnitPrice();
     double costRewardRatio(long population);
+    void updateExpectedMinedBlocks(Miner* miner);
+    void updateExpectedMinedBlocks(PoolManager* p);
+    void processBwDetection(PoolManager* P);
 public:
     static Game& instance() {
         static Game instance;

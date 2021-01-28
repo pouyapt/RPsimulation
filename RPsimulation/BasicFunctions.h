@@ -21,6 +21,8 @@ int noOfRequiredTrials(double px, double targetP);
 double calculatePopulationGrowth(unsigned p, unsigned m, double k);
 double sigmoid(double variable, double MaxValue, double steepness, double midPoint, double offset);
 double sigmoidDeravative(double variable, double MaxValue, double steepness, double midPoint);
+double confidenceIntervalLowerBound(double x, double n, int confidence);
+double confidenceIntervalUpperBound(double x, double n, int confidence);
 
 class Money;
 class Time;
@@ -28,6 +30,7 @@ class Random;
 class Miner;
 class PoolManager;
 class MinerPopulation;
+class Reputation;
 class Pools;
 class Game;
 class MasterTime;

@@ -71,3 +71,31 @@ double sigmoid(double variable, double MaxValue, double steepness, double midPoi
 double sigmoidDeravative(double variable, double MaxValue, double steepness, double midPoint) {
     return (steepness*MaxValue*exp(steepness*(variable-midPoint)) / pow(1+exp(steepness*(variable-midPoint)), 2));
 }
+
+double confidenceIntervalLowerBound(double x, double n, int confidence) {
+    double z;
+    if (confidence==90)
+        z = 1.645;
+    else if (confidence==95)
+        z = 1.96;
+    else if (confidence==98)
+        z = 2.326;
+    else
+        z = 2.576;
+    double p_hat = x/n;
+    return p_hat - z*sqrt((p_hat*(1-p_hat))/n);
+}
+
+double confidenceIntervalUpperBound(double x, double n, int confidence) {
+    double z;
+    if (confidence==90)
+        z = 1.645;
+    else if (confidence==95)
+        z = 1.96;
+    else if (confidence==98)
+        z = 2.326;
+    else
+        z = 2.576;
+    double p_hat = x/n;
+    return p_hat + z*sqrt((p_hat*(1-p_hat))/n);
+}
