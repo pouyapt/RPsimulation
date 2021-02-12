@@ -1,6 +1,71 @@
 #include "BaseUnits.h"
 
 
+double TrustA::mu_x_B(double x) {
+    return (p->theta-p->eta)/(p->beta+1)*(x+1)+p->eta;
+}
+
+double TrustA::mu_x_N(double x)  {
+    return p->theta;
+}
+
+double TrustA::mu_x_G(double x)  {
+    return (p->kappa-p->theta)/(1-p->epsilon-p->alpha)*(x-p->alpha)+p->theta;
+}
+
+double TrustA::mu_x_1(double x)  {
+    return (p->kappa/p->epsilon)*(1-x-p->epsilon)+p->kappa;
+}
+
+double TrustA::mu_prime_x_1(double x)  {
+    return (p->kappa/p->epsilon)*(x+1);
+}
+
+double TrustA::mu_prime_x_B(double x)  {
+    return (p->theta-p->kappa)/(p->beta-p->epsilon+1)*(x-p->epsilon+1)+p->kappa;
+}
+
+double TrustA::mu_prime_x_N(double x)  {
+    return p->theta;
+}
+
+double TrustA::mu_prime_x_G(double x)  {
+    return (p->eta-p->theta)/(1-p->alpha)*(x-p->alpha)+p->theta;
+}
+
+double TrustA::cooperation(double x) {
+    if (x < p->beta)
+        return x+mu_x_B(x);
+    if (x >= p->beta && x <= p->alpha)
+        return x+mu_x_N(x);
+    if (x > p->alpha && x <= 1-p->epsilon)
+        return x+mu_x_G(x);
+    return x+mu_x_1(x);
+}
+
+double TrustA::defection(double x) {
+    if (x > p->alpha)
+        return x-mu_prime_x_G(x);
+    if (x >= p->beta && x <= p->alpha)
+        return x-mu_x_N(x);;
+    if (x < p->beta && x >= p->epsilon-1)
+        return x-mu_prime_x_B(x);
+    return x-mu_prime_x_1(x);
+}
+
+//----------------------------------------------------------------------------------
+
+void TrustB::cooperation(TrustBData & t) {
+    t.reputation = sigmoid(++t.cycle/2.0, 2, p->steepness, t.defect, 1);
+}
+
+void TrustB::defection(TrustBData & t) {
+    t.defect += ++t.defectCount - p->log_(t.defectCount);
+    t.reputation = sigmoid(t.cycle++/2.0, 2, p->steepness, t.defect, 1);
+}
+
+//----------------------------------------------------------------------------------
+
 Time::Time() {
     second = 0;
     minute = 0;
@@ -669,60 +734,6 @@ std::istream& operator>>(std::istream& is, Money&& dl) {
 
 //-------------------------------------------------------------------------------------
 
-double Trust::mu_x_B(double x) {
-    return (p->theta-p->eta)/(p->beta+1)*(x+1)+p->eta;
-}
-
-double Trust::mu_x_N(double x)  {
-    return p->theta;
-}
-
-double Trust::mu_x_G(double x)  {
-    return (p->kappa-p->theta)/(1-p->epsilon-p->alpha)*(x-p->alpha)+p->theta;
-}
-
-double Trust::mu_x_1(double x)  {
-    return (p->kappa/p->epsilon)*(1-x-p->epsilon)+p->kappa;
-}
-
-double Trust::mu_prime_x_1(double x)  {
-    return (p->kappa/p->epsilon)*(x+1);
-}
-
-double Trust::mu_prime_x_B(double x)  {
-    return (p->theta-p->kappa)/(p->beta-p->epsilon+1)*(x-p->epsilon+1)+p->kappa;
-}
-
-double Trust::mu_prime_x_N(double x)  {
-    return p->theta;
-}
-
-double Trust::mu_prime_x_G(double x)  {
-    return (p->eta-p->theta)/(1-p->alpha)*(x-p->alpha)+p->theta;
-}
-
-double Trust::cooperation(double x) {
-    if (x < p->beta)
-        return x+mu_x_B(x);
-    if (x >= p->beta && x <= p->alpha)
-        return x+mu_x_N(x);
-    if (x > p->alpha && x <= 1-p->epsilon)
-        return x+mu_x_G(x);
-    return x+mu_x_1(x);
-}
-
-double Trust::defection(double x) {
-    if (x > p->alpha)
-        return x-mu_prime_x_G(x);
-    if (x >= p->beta && x <= p->alpha)
-        return x-mu_x_N(x);;
-    if (x < p->beta && x >= p->epsilon-1)
-        return x-mu_prime_x_B(x);
-    return x-mu_prime_x_1(x);
-}
-
-//----------------------------------------------------------------------------------
-
 Stats::~Stats() {
     addNewStatsToCsvFile();
 }
@@ -750,12 +761,24 @@ void Stats::updateNumberOfPoolMiners(int i) {
     current.numberOfPoolMiners += i;
 }
 
-bool Stats::inReputationMode() {
+bool& Stats::inReputationMode() {
     return reputationMode;
+}
+
+int Stats::getDishonestActivityCount() {
+    return current.dishonestActivityCount;
+}
+
+int Stats::getDetectedDishonestActivityCount() {
+    return current.detectedDishonestActivityCount;
 }
 
 void Stats::printCurrentStats() {
     std::cout << "\n=================== Statistics ==================\n";
+    if (reputationMode==1)
+        std::cout << "Mode:                                 " << "Reputation\n";
+    else
+        std::cout << "Mode:                                 " << "Non-Reputation\n";
     std::cout << "Current Unit Value:                   " << current.unitPrice << std::endl;
     std::cout << "Unit Per New Block:                   " << getUnitPerNewBlock() << std::endl;
     std::cout << "Total Network Hash Power:             " << current.totalHashPower << " TH/s" << std::endl;
@@ -764,8 +787,6 @@ void Stats::printCurrentStats() {
     std::cout << "Number of Pools:                      " << current.poolsPopulation << std::endl;
     std::cout << "Solo / Pool Miners:                   " << double(current.minersPopulation - current.numberOfPoolMiners)/double(current.minersPopulation)*100 << "% / " << double(current.numberOfPoolMiners)/double(current.minersPopulation)*100 << "%" << std::endl;
     std::cout << "Last Generated Block:                 " << convertToDate_Time(current.lastGeneratedBlockTime);
-    std::cout << "Highest Miner Reputation:             " << current.highestMinerReputation << std::endl;
-    std::cout << "Lowest Miner Reputation:              " << current.lowestMinerReputation << std::endl;
     std::cout << "Total Mined Blocks:                   " << current.totalMinedBlocks << std::endl;
     std::cout << "Total Mining Power Costs:             " << current.totalCost << std::endl;
     std::cout << "Current Value of All Blocks:          " << current.unitPrice * getUnitPerNewBlock() * current.totalMinedBlocks << std::endl;
@@ -782,6 +803,8 @@ void Stats::addNewStatsToCsvFile() {
          for (auto i=0; i<snapShots.size(); i++) {
              uidlFile << snapShots[i].totalMinedBlocks << ","
                       << snapShots[i].time << ","
+                      << snapShots[i].minedBy << ","
+                      << snapShots[i].pool << ","
                       << snapShots[i].unitPrice.convert() << ","
                       << snapShots[i].unitPerNewBlock << ","
                       << snapShots[i].totalHashPower << ","
@@ -790,8 +813,6 @@ void Stats::addNewStatsToCsvFile() {
                       << snapShots[i].numberOfPoolMiners << ","
                       << snapShots[i].unitPrice.convert()*snapShots[i].unitPerNewBlock*snapShots[i].totalMinedBlocks << ","
                       << snapShots[i].totalCost.convert() << ","
-                      << snapShots[i].highestMinerReputation << ","
-                      << snapShots[i].lowestMinerReputation << ","
                       << snapShots[i].dishonestActivityCount << ","
                       << snapShots[i].detectedDishonestActivityCount << ","
                       << snapShots[i].falseDetectedDishonestActivityCount << "\n";
@@ -812,17 +833,17 @@ void Stats::statFileInit() {
         std::ofstream out;
         out.open("Output/stat_snapshots.csv");
         out << "round,"
-            << "unix_time,"
+            << "mined_time,"
+            << "mined_by,"
+            << "pool,"
             << "unit_price,"
             << "units_per_new_block,"
             << "total_hash_power,"
-            << "number_of_miners,"
-            << "number_of_pools,"
-            << "pool_miners,"
+            << "miners_count,"
+            << "pools_count,"
+            << "miners_in_pool_count,"
             << "total_blocks_value_in_dollar,"
-            << "total_miner_power_cost,"
-            << "highest_miner_reputation,"
-            << "lowest_miner_reputation,"
+            << "total_spent_power_cost,"
             << "dishonest_activities,"
             << "detected_dishonest_activities,"
             << "false_detected_dishonest_activities\n";

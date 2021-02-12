@@ -3,9 +3,16 @@
 
 #include "listDS.h"
 
-class Trust {
+struct TrustBData {
+    double reputation = 0;
+    double defect = 0;
+    int cycle = 0;
+    int defectCount = 0;
+};
+
+class TrustA {
 private:
-    TrustParameters* p = &TrustParameters::instance();
+    TrustAParameters* p = &TrustAParameters::instance();
     double mu_x_B(double x);
     double mu_x_N(double x);
     double mu_x_G(double x);
@@ -17,6 +24,14 @@ private:
 public:
     double cooperation(double x);
     double defection(double x);
+};
+
+class TrustB {
+private:
+    TrustBParameters* p = &TrustBParameters::instance();
+public:
+    void cooperation(TrustBData & t);
+    void defection(TrustBData & t);
 };
 
 //----------------------------------------------------------------------------------
@@ -210,7 +225,7 @@ public:
         return instance;
     }
     Stats operator=(const Stats & orig) = delete;
-    std::string filename = "Output/stat_snapshots.csv";
+    std::string filename = "output/stat_snapshots.csv";
     friend class MinerPopulation;
     friend class Pools;
     friend class Game;
@@ -226,16 +241,20 @@ public:
     Money getUnitPrice();
     double getUnitPerNewBlock();
     void updateNumberOfPoolMiners(int i);
-    bool inReputationMode();
+    int getDishonestActivityCount();
+    int getDetectedDishonestActivityCount();
+    bool& inReputationMode();
 private:
     Stats() {}
     ~Stats();
-    bool reputationMode = false;
+    bool reputationMode = true;
     void statFileInit();
     struct snapShot {
         long time = 0;
         Money unitPrice = 0;
         double unitPerNewBlock = 0;
+        std::string minedBy;
+        std::string pool;
         long totalHashPower = 0;
         long minersPopulation = 0;
         long inactiveMinersPopulation = 0;
@@ -243,8 +262,6 @@ private:
         double costRewardRatio = 0;
         int numberOfPoolMiners = 0;
         int MinersWithAtLeastOneBlock = 0;
-        double highestMinerReputation = 0;
-        double lowestMinerReputation = 0;
         int dishonestActivityCount = 0;
         int detectedDishonestActivityCount = 0;
         int falseDetectedDishonestActivityCount = 0;

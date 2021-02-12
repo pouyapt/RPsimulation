@@ -218,6 +218,15 @@ public:
         while (a<entityP->getPoolFeesPars("min") || a>=entityP->getPoolFeesPars("max"));
         return a;
     }
+    auto poolPowReward() {
+        std::mt19937 gen{ran()};
+        std::normal_distribution<float> d(entityP->getPoolPowRewardPars("mean"), entityP->getPoolPowRewardPars("std"));
+        double a = 0;
+        do
+            a = d(gen);
+        while (a<entityP->getPoolPowRewardPars("min") || a>=entityP->getPoolPowRewardPars("max"));
+        return a;
+    }
     auto minig_time() {
         std::mt19937 gen{ran()};
         std::normal_distribution<> d(miningP->getMiningTime("mean"), miningP->getMiningTime("std"));
@@ -226,12 +235,6 @@ public:
             a = d(gen);
         while (a<5);
         return a;
-    }
-    auto powReward() {
-        std::mt19937 gen{ran()};
-        std::uniform_int_distribution<> d(entityP->getPOWreward("min"), entityP->getPOWreward("max"));
-        float a = d(gen);
-        return a/1000;
     }
     double probabilityConfidence() {
         std::mt19937 gen{ran()};

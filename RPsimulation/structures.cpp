@@ -35,8 +35,6 @@ void MinerPopulation::updateVariableParameters() {
     variableP->current.minersPopulation = allMinersList.size();
     variableP->current.totalHashPower = totalHashPower_;
     variableP->current.inactiveMinersPopulation = removdMinersCount;
-    variableP->current.highestMinerReputation = highestMinerReutation;
-    variableP->current.lowestMinerReputation = lowestMinerReutation;
 }
 
 void MinerPopulation::resetGlobalParameters() {
@@ -54,8 +52,10 @@ void MinerPopulation::writeMinersData(std::ofstream &out) {
         out << allMinersList[i]->idValue << std::endl;
         out << allMinersList[i]->joinTimestamp << std::endl;
         out << allMinersList[i]->joinedRound << std::endl;
-        out << allMinersList[i]->rational << std::endl;
-        out << allMinersList[i]->leftRound << std::endl;
+        out << allMinersList[i]->poolFeeSensetive << std::endl;
+        out << allMinersList[i]->leaveIfReachProfitTh << std::endl;
+        out << allMinersList[i]->neverJoinPool << std::endl;
+        out << allMinersList[i]->lastPlayedRound << std::endl;
         out << allMinersList[i]->hashPower << std::endl;
         out << allMinersList[i]->m.name << std::endl;
         out << allMinersList[i]->m.hashRate << std::endl;
@@ -69,14 +69,17 @@ void MinerPopulation::writeMinersData(std::ofstream &out) {
         out << allMinersList[i]->incomePow << std::endl;
         out << allMinersList[i]->incomePool << std::endl;
         out << allMinersList[i]->incomeDishonesty << std::endl;
-        out << allMinersList[i]->costs.convert() << std::endl;
+        out << allMinersList[i]->poolCosts.convert() << std::endl;
+        out << allMinersList[i]->soloCosts.convert() << std::endl;
         out << allMinersList[i]->BW_assigned<< std::endl;
-        out << allMinersList[i]->reputation << std::endl;
-        out << allMinersList[i]->reputationTimeOffset << std::endl;
-        out << allMinersList[i]->violationTimeOffset << std::endl;
-        out << allMinersList[i]->roundsPlayed << std::endl;
+        out << allMinersList[i]->r.reputation << std::endl;
+        out << allMinersList[i]->r.defect << std::endl;
+        out << allMinersList[i]->r.cycle << std::endl;
+        out << allMinersList[i]->r.defectCount << std::endl;
         out << allMinersList[i]->expectedPowCount << std::endl;
-        out << allMinersList[i]->BWAttack << std::endl;
+        out << allMinersList[i]->BWAttackRounds << std::endl;
+        out << allMinersList[i]->allBWAttacks << std::endl;
+        out << allMinersList[i]->poolRemoved << std::endl;
         out << allMinersList[i]->probabilityConfidence << std::endl;
         out << allMinersList[i]->investment.convert() << std::endl;
         out << allMinersList[i]->lossTolerance.convert() << std::endl;
@@ -97,8 +100,10 @@ void MinerPopulation::readMinersData(std::ifstream &in, int size) {
         in >> newItem->idValue;
         in >> newItem->joinTimestamp;
         in >> newItem->joinedRound;
-        in >> newItem->rational;
-        in >> newItem->leftRound;
+        in >> newItem->poolFeeSensetive;
+        in >> newItem->leaveIfReachProfitTh;
+        in >> newItem->neverJoinPool;
+        in >> newItem->lastPlayedRound;
         in >> newItem->hashPower;
         in >> newItem->m.name;
         in >> newItem->m.hashRate;
@@ -112,14 +117,17 @@ void MinerPopulation::readMinersData(std::ifstream &in, int size) {
         in >> newItem->incomePow;
         in >> newItem->incomePool;
         in >> newItem->incomeDishonesty;
-        in >> newItem->costs;
+        in >> newItem->poolCosts;
+        in >> newItem->soloCosts;
         in >> newItem->BW_assigned;
-        in >> newItem->reputation;
-        in >> newItem->reputationTimeOffset;
-        in >> newItem->violationTimeOffset;
-        in >> newItem->roundsPlayed;
+        in >> newItem->r.reputation;
+        in >> newItem->r.defect;
+        in >> newItem->r.cycle;
+        in >> newItem->r.defectCount;
         in >> newItem->expectedPowCount;
-        in >> newItem->BWAttack;
+        in >> newItem->BWAttackRounds;
+        in >> newItem->allBWAttacks;
+        in >> newItem->poolRemoved;
         in >> newItem->probabilityConfidence;
         in >> newItem->investment;
         in >> newItem->lossTolerance;
@@ -139,8 +147,6 @@ void MinerPopulation::writePopulationData () {
     pd << allMinersList.size() << std::endl;
     pd << removdMinersCount << std::endl;
     pd << totalHashPower_ << std::endl;
-    pd << highestMinerReutation << std::endl;
-    pd << lowestMinerReutation << std::endl;
     pd << population << std::endl;
     pd << populationStage << std::endl;
     pd << variableP->current.numberOfPoolMiners << std::endl;
@@ -163,8 +169,6 @@ bool MinerPopulation::readPopulationData () {
     pd >> size;
     pd >> removdMinersCount;
     pd >> totalHashPower_;
-    pd >> highestMinerReutation;
-    pd >> lowestMinerReutation;
     pd >> population;
     pd >> populationStage;
     pd >> variableP->current.numberOfPoolMiners;
@@ -188,10 +192,8 @@ void MinerPopulation::writeMinersInvitations(Pools* P) {
     out.open("Data/invitations.db");
     for (auto i=0; i<allMinersList.size(); i++) {
         out << allMinersList[i]->invitations.size() << std::endl;
-        for (auto j=0; j<allMinersList[i]->invitations.size(); j++) {
-            out << allMinersList[i]->invitations[j].PM->getIndex() << std::endl;
-            out << allMinersList[i]->invitations[j].EstimatedDailyProfit.convert() << std::endl;
-        }
+        for (auto j=0; j<allMinersList[i]->invitations.size(); j++)
+            out << allMinersList[i]->invitations[j]->getIndex() << std::endl;
     }
     out.close();
 }
@@ -207,12 +209,11 @@ void MinerPopulation::readMinersInvitations(Pools* P) {
         long size = 0;
         in >> size;
         while (size) {
-            poolEvaluation PE;
+            PoolManager* newP;
             int index;
             in >> index;
-            PE.PM = (*P)[index];
-            in >> PE.EstimatedDailyProfit;
-            allMinersList[i]->invitations.push_back(PE);
+            newP = (*P)[index];
+            allMinersList[i]->invitations.push_back(newP);
             size--;
         }
     }
@@ -248,7 +249,8 @@ void MinerPopulation::addMiner(long time) {
     Miner* newMiner = new Miner;
     if (time!=0)
         newMiner->joinTimestamp = time;
-    newMiner->joinedRound = variableP->current.totalMinedBlocks+1;
+    newMiner->joinedRound = variableP->current.totalMinedBlocks;
+    newMiner->lastPlayedRound = variableP->current.totalMinedBlocks;
     allMinersList.push_back(newMiner);
     newMiner->index = unsigned(allMinersList.size());
     totalHashPower_ += newMiner->getHashPower();
@@ -258,7 +260,7 @@ void MinerPopulation::addMiner(long time) {
 void MinerPopulation::deleteMiner(unsigned index) {
     Miner* temp = allMinersList.pop(index);
     temp->quitTimestamp = T->getCurrentTime();
-    temp->leftRound = variableP->current.totalMinedBlocks;
+    temp->lastPlayedRound = variableP->current.totalMinedBlocks;
     writeRemovedMinerToCsvFile(temp);
     totalHashPower_ -= temp->getHashPower();
     removdMinersCount++;
@@ -304,7 +306,7 @@ int MinerPopulation::MinersWithAtLeastOneBlock() {
 int MinerPopulation::MinersWithProfit() {
     int count=0;
     for (auto i=0; i<allMinersList.size(); i++)
-        (allMinersList[i]->costs + variableP->current.unitPrice*(allMinersList[i]->incomePow+allMinersList[i]->incomePool+allMinersList[i]->incomeDishonesty)) > 0 ? count++ : false;
+        (allMinersList[i]->poolCosts + variableP->current.unitPrice*(allMinersList[i]->incomePow+allMinersList[i]->incomePool+allMinersList[i]->incomeDishonesty)) > 0 ? count++ : false;
     return count;
 }
 
@@ -347,7 +349,7 @@ int MinerPopulation::calculateInitialPopulation() {
 
 void MinerPopulation::processMinersRemoval() {
     if (removeLostMinersCountdown==0) {
-        removeLostMiners();
+        removeOutOfGameMiners();
         removeLostMinersCountdown = int(gen->random_uniform_long(20, 100));
     }
     else {
@@ -355,10 +357,10 @@ void MinerPopulation::processMinersRemoval() {
     }
 }
 
-void MinerPopulation::removeLostMiners() {
+void MinerPopulation::removeOutOfGameMiners() {
     int i=0;
     while (i < allMinersList.size()) {
-        if (allMinersList[i]->isBellowLossTolerance())
+        if (allMinersList[i]->isBellowLossTolerance() || allMinersList[i]->isReachedTargetProfit())
             deleteMiner(i);
         else
             i++;
@@ -383,15 +385,17 @@ void MinerPopulation::writeCsvHeaders(std::fstream & out) {
         << "last_name,"
         << "hash_power,"
         << "cost_rate_KWPH,"
-        << "starting_round,"
-        << "ending_round,"
-        << "round_mined,"
+        << "round_before_start,"
+        << "last_round,"
         << "actual_pow,"
         << "expected_pow,"
         << "pool_name,"
-        << "block_withholding,"
+        << "bw_instance,"
+        << "bw_all_rounds,"
         << "reputation,"
-        << "costs_in_dollar,"
+        << "pool_removed,"
+        << "solo_costs_in_dollar,"
+        << "pool_costs_in_dollar,"
         << "solo_income_in_crypto,"
         << "pool_income_in_crypto,"
         << "dishonest_income_in_crypto,"
@@ -405,21 +409,23 @@ void MinerPopulation::writeMinerToCsvFile(std::fstream & out, Miner* miner) {
         << miner->hashPower << ","
         << miner->powerConRate.convert() << ","
         << miner->joinedRound << ","
-        << miner->leftRound << ","
-        << miner->roundsPlayed << ","
+        << miner->lastPlayedRound << ","
         << miner->powCount << ","
         << miner->expectedPowCount << ",";
     if (miner->isInPool())
         out << miner->pool->poolName() << ",";
     else
         out << "-,";
-    out << miner->BWAttack << ","
-        << miner->reputation << ","
-        << miner->costs.convert() << ","
+    out << miner->BWAttackRounds << ","
+        << miner->allBWAttacks << ","
+        << miner->r.reputation << ","
+        << miner->poolRemoved << ","
+        << miner->soloCosts.convert() << ","
+        << miner->poolCosts.convert() << ","
         << miner->incomePow << ","
         << miner->incomePool << ","
         << miner->incomeDishonesty << ","
-        << (variableP->current.unitPrice*(miner->incomePow+miner->incomePool+miner->incomeDishonesty)).convert() + miner->costs.convert() << "\n";
+        << miner->getProfitInDollar().convert() << "\n";
 }
 
 void MinerPopulation::writeRemovedMinerToCsvFile(Miner *miner) {
@@ -506,7 +512,6 @@ void Pools::writePools() {
         out << poolList[i]->lastName << std::endl;
         out << poolList[i]->idValue << std::endl;
         out << poolList[i]->dishonest << std::endl;
-        out << poolList[i]->minimumMembershipTime << std::endl;
         out << poolList[i]->poolIncome << std::endl;
         out << poolList[i]->poolDishonestIncome << std::endl;
         out << poolList[i]->cost.convert() << std::endl;
@@ -517,6 +522,8 @@ void Pools::writePools() {
         out << poolList[i]->expectedPowCount << std::endl;
         out << poolList[i]->dishonestPowCount << std::endl;
         out << poolList[i]->detectionCycle << std::endl;
+        out << poolList[i]->detectionCycleRemaining << std::endl;
+        out << poolList[i]->invitationProcessCycle << std::endl;
         out << poolList[i]->MiningPool::poolName() << std::endl;
         out << poolList[i]->MiningPool::poolFee << std::endl;
         out << poolList[i]->MiningPool::powReward << std::endl;
@@ -550,7 +557,6 @@ bool Pools::readPools () {
         in >> newPM->lastName;
         in >> newPM->idValue;
         in >> newPM->dishonest;
-        in >> newPM->minimumMembershipTime;
         in >> newPM->poolIncome;
         in >> newPM->poolDishonestIncome;
         in >> newPM->cost;
@@ -561,6 +567,8 @@ bool Pools::readPools () {
         in >> newPM->expectedPowCount;
         in >> newPM->dishonestPowCount;
         in >> newPM->detectionCycle;
+        in >> newPM->detectionCycleRemaining;
+        in >> newPM->invitationProcessCycle;
         in >> newPM->MiningPool::poolName();
         in >> newPM->MiningPool::poolFee;
         in >> newPM->MiningPool::powReward;
@@ -648,5 +656,5 @@ void Pools::writePoolToCsvFile(std::fstream & out, PoolManager* p) {
         << p->cost.convert() << ","
         << p->poolIncome << ","
         << p->poolDishonestIncome << ","
-        << p->cost.convert()+(variableP->getUnitPrice().convert()*(p->bribePayed+p->poolIncome+p->poolDishonestIncome)) << "\n";
+        << p->cost.convert()+(variableP->getUnitPrice().convert()*(p->poolIncome+p->poolDishonestIncome)) << "\n";
 }

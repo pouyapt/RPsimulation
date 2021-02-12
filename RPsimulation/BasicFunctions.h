@@ -1,6 +1,7 @@
 #ifndef BasicFunctions_h
 #define BasicFunctions_h
 
+#include <filesystem>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -11,7 +12,7 @@
 #include <chrono>
 #include <cmath>
 
-bool file_exist(const char *fileName);
+bool file_exist(std::string fileName);
 char* asctime_ct(const struct tm *timeptr);
 std::string moneyFormat(double amount);
 void folder();
@@ -34,5 +35,6 @@ class Reputation;
 class Pools;
 class Game;
 class MasterTime;
+class BW_Attack;
 
 #endif /* foundation_hpp */

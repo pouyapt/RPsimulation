@@ -43,6 +43,17 @@ double EntityParameters::getPoolFeesPars(std::string parameter) {
         return poolFeeMax;
 }
 
+double EntityParameters::getPoolPowRewardPars(std::string parameter) {
+    if (parameter=="mean")
+        return poolPowRewardMean;
+    else if (parameter=="std")
+        return poolPowRewardStd;
+    else if (parameter=="min")
+        return poolPowRewardMin;
+    else
+        return poolPowRewardMax;
+}
+
 double EntityParameters::getProbabilityConfidence(std::string parameter) {
     if (parameter=="mean")
         return probabilityConfidenceMean;

@@ -10,10 +10,10 @@ public:
         static PoolJoin instance;
         return instance;
     }
-    void runReputationMode();
-    void runNormalMode();
+    void run();
 private:
-    int countUntilProcessInvitations;
+    int poolJoinCount = 0;
+    int range = 500;
     void generateCount();
     PoolJoin();
     ~PoolJoin();
@@ -21,9 +21,11 @@ private:
     Pools* P = &Pools::instance();
     core::Random* gen = &core::Random::instance();
     Stats* stats = &Stats::instance();
+    void runReputationMode();
+    void runNormalMode();
     void writeFile();
     bool readFile();
-    std::string file = "Data/pooljoin.db";
+    std::string file = "data/pooljoin.db";
     void provideMiners();
     void sendInvitations();
     void processInvitations();
@@ -42,7 +44,7 @@ private:
     MinerPopulation* MP = &MinerPopulation::instance();
     Pools* P = &Pools::instance();
     Stats* variableP = &Stats::instance();
-    std::string filename = "Data/BW_Attack.db";
+    std::string filename = "data/BW_Attack.db";
     bool assignVictim();
     bool selectMinerFromVictimPool();
     bool minerIsCorrupt(Miner* miner, double & bribePercentage, int & numberOfRounds);
@@ -59,7 +61,7 @@ public:
         return instance;
     }
     bool initializeAttackEntities();
-    bool processAttack(Miner* miner, double reward, int & activity);
+    bool processAttack(Miner* & miner, double reward, int & activity);
     void print();
 };
 
@@ -70,13 +72,11 @@ private:
     MinerPopulation* MP = &MinerPopulation::instance();
     MasterTime* T = &MasterTime::instance();
     Stats* variableP = &Stats::instance();
-    double minerPresenceDurationInYear(Miner* miner);
-    void updateHighestLowestReputation(Miner* miner);
 public:
     Reputation() {}
     ~Reputation() {}
-    void applyNegativeReputation(Miner* miner);
-    void updateReputation(Miner* miner);
+    void defection(Miner* miner);
+    void cooperation(Miner* miner);
 };
 
 //---------------------------------------------------------------------------------
@@ -93,7 +93,6 @@ private:
     MasterTime* T = &MasterTime::instance();
     core::Random* gen = &core::Random::instance();
     BW_Attack* BW = &BW_Attack::instance();
-    Reputation R;
     void updateMiningEntitiesData();
     int priceModulatorIndex = 0;
     Miner* winerMiner();
@@ -103,7 +102,7 @@ private:
     int unitsPerBlock = 20;
     int totalMinedBlocks;
     double currentCostRewardRatio;
-    std::string file = "Data/game.db";
+    std::string file = "data/game.db";
     Time lastRoundDuration;
     Time lastGeneratedBlockTimestamp;
     Money lastRoundPowerCost;
@@ -112,7 +111,7 @@ private:
     int falseDetectedDishonestActivityCount = 0;
     bool ReadGameFile();
     void WriteGameFile();
-    void updateVariableParameters();
+    void updateVariableParameters(Miner* minedBy=nullptr);
     void updateUnitPrice();
     void updateModulatedUnitPrice();
     void generateInitialUnitPrice();
@@ -129,5 +128,8 @@ public:
     Time lastGeneratedBlockTime() const;
 };
 
+//--------------------------------------------------------------------------------
+
+void run(int rounds, bool mode);
 
 #endif

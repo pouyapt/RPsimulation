@@ -1,15 +1,18 @@
 #include "BasicFunctions.h"
 
-bool file_exist(const char *fileName) {
+bool file_exist(std::string fileName) {
     std::ifstream infile(fileName);
     return infile.good();
 }
 
 void folder() {
-    if (!file_exist("Data"))
-        system("mkdir Data");
-    if (!file_exist("Output"))
-        system("mkdir Output");
+    namespace s = std::__fs::filesystem;
+    const s::path& output = "./output";
+    const s::path& data = "./data";
+    if (!s::is_directory(output))
+        create_directories(output);
+    if (!s::is_directory(data))
+        create_directories(data);
 }
 
 char* asctime_ct(const struct tm *timeptr) {
